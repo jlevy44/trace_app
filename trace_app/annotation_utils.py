@@ -67,7 +67,7 @@ def add_annotation_type(config, n_clicks,
         # print(annotation_data)
         colname = "name"
         if colname not in annotation_data.columns:
-            annotation_data['annot'] = annotation_data['classification'].map(get_name)
+            annotation_data['annot'] = annotation_data['classification' if 'classification' in annotation_data.columns else 'properties'].map(get_name)
         else:
             annotation_data['annot'] = annotation_data[colname]
         gp2 = annotation_data.copy()
@@ -215,7 +215,7 @@ def update_annotation_callback(config,
         # print(annotation_data)
         colname = "name"
         if colname not in annotation_data.columns:
-            annotation_data['annot'] = annotation_data['classification'].map(get_name)
+            annotation_data['annot'] = annotation_data['classification' if 'classification' in annotation_data.columns else 'properties'].map(get_name)
         else:
             annotation_data['annot'] = annotation_data[colname]
         gp2 = annotation_data.copy()
