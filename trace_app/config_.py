@@ -71,6 +71,8 @@ for one_file in all_files_list:
             file_type_list.append("Exported Metals")
         elif os.path.splitext(one_data)[1] in ['.xml',".json",".geojson"]:
             file_type_list.append('Annotations')
+        else:
+            file_type_list.append('Unknown')
         project_df_list.append(one_file)
         file_name_df_list.append(one_data)
 

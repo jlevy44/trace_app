@@ -65,7 +65,11 @@ def add_annotation_type(config, n_clicks,
     if filename != None and filename != config.file_name_history_1:
         annotation_data = parse_contents(config,filename)
         # print(annotation_data)
-        annotation_data['annot'] = annotation_data['classification'].map(get_name)
+        colname = "name"
+        if colname not in annotation_data.columns:
+            annotation_data['annot'] = annotation_data['classification'].map(get_name)
+        else:
+            annotation_data['annot'] = annotation_data[colname]
         gp2 = annotation_data.copy()
         gp2['geometry'] = gp2['geometry'].scale(config.compression_annotation_tab*config.compression_value_again,#*config.compression_value_again,
                                                 config.compression_annotation_tab*config.compression_value_again,#*config.compression_value_again,
@@ -209,7 +213,11 @@ def update_annotation_callback(config,
     elif filename and filename != config.file_name_history_2:
         annotation_data = parse_contents(config, filename)
         # print(annotation_data)
-        annotation_data['annot'] = annotation_data['classification'].map(get_name)
+        colname = "name"
+        if colname not in annotation_data.columns:
+            annotation_data['annot'] = annotation_data['classification'].map(get_name)
+        else:
+            annotation_data['annot'] = annotation_data[colname]
         gp2 = annotation_data.copy()
         gp2['geometry'] = gp2['geometry'].scale(config.compression_annotation_tab*config.compression_value_again,#compression_value_again,#config.compression_annotation_tab,#*config.compression_value_again,
                                                 config.compression_annotation_tab*config.compression_value_again,#compression_value_again,#config.compression_annotation_tab,#*config.compression_value_again,

@@ -34,7 +34,7 @@ def add_click_grid(fig, shape):
         mode='markers',
         # marker_color="black",
         marker_opacity=0,
-        marker_size=25,
+        marker_size=1,
         hoverinfo='none',
         showlegend=False
     )
@@ -268,12 +268,12 @@ def generate_tissue_mask_func(config, n_clicks, threshold, old_selected_rows, me
             pickle.dump(config.metal_data_preprocess, handle)
 
         # Update file list
-        files_df, new_selected_rows = generate_files_df_records(config, old_selected_rows)
+        files_df, files_df_columns, new_selected_rows = generate_files_df_records(config, old_selected_rows)
         config.upload_files_df_data = files_df
         display_files_table = dash_table.DataTable(
             id='files_table',
             selected_rows=new_selected_rows,
-            columns=[{"name": i, "id": i} for i in files_df.columns],
+            columns=[{"name": i, "id": i} for i in files_df_columns],
             data=files_df,
             row_selectable='multi'
         )
@@ -1161,7 +1161,7 @@ def show_coregistered_images(config, n_clicks, table_data, old_selected_rows, me
                                     id='files_table',
                                     selected_rows = new_selected_rows,
                                     columns=[
-                                        {"name": i, "id": i,} for i in files_df.columns
+                                        {"name": i, "id": i,} for i in files_df_columns
                                     ],
                                     data=files_df,
                                     row_selectable='multi')
