@@ -172,6 +172,8 @@ def upload_file(config, list_of_contents, list_of_names, list_of_dates, upload_d
 
 def upload_file(config, list_of_contents, list_of_names, list_of_dates, upload_data_folder_dropdown):
     temp_metal_dict = {}
+    elements_search = '|'.join(f'(?:{element})' for element in config.elements)
+    elements_pattern = re.compile(rf'.*\s+({elements_search})\d+_ppm.*\.xlsx$')
     print(list_of_names)
     if list_of_names is not None:
         
@@ -179,13 +181,19 @@ def upload_file(config, list_of_contents, list_of_names, list_of_dates, upload_d
             d=dask.compute({f:dask.delayed(read_excel_fast_v2)(f,content) for f,content in zip(list_of_names,list_of_contents)},scheduler="single-threaded",num_workers=min(config.num_workers,len(list_of_names)))[0]
         d_=dict()#defaultdict(lambda : dict())
         for k in d:
+            k=os.path.basename(k)
             if "_ppm" in k:
                 if np.prod(d[k].shape)>0:
-                    d_[k.replace(" ","_").split("_")[-3]]=np.array(d[k])#[k.split("/")[-3 if k.split("/")[-3]!="LAICPMS" else -2]]#.replace(" ","_").split("_")[-4]
-        elements=list(d.keys())
-        atomic_numbers=[int(re.sub(r"\D","",elem)) for elem in elements]
+                    match = elements_pattern.match(k)
+                    if match:
+                        element = match.group(1)
+                    else:
+                        element = re.sub(r'\d+', '', k.replace(" ","_").split("_")[-3])
+                    d_[element]=np.array(d[k])#[k.split("/")[-3 if k.split("/")[-3]!="LAICPMS" else -2]]#.replace(" ","_").split("_")[-4]
+        elements=list(d_.keys())
+        sorted_elements = sorted(elements, key=lambda x: config.elements.index(x))
         
-        d_=OrderedDict([(elem,d[elem]) for elem in np.array(elements)[np.argsort(atomic_numbers)]])
+        d_=OrderedDict([(elem,d_[elem]) for elem in sorted_elements])
         d_["All"]=np.sum(list(d_.values()), axis=0)
         d_=dict(metals=d_)
         
