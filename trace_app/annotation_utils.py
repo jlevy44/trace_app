@@ -183,6 +183,7 @@ def update_annotation_callback(config,
                                colormap,
                                vmin_vmax,
                                n_clicks,
+                               n_clicks_load_data,
                                contents,
                                filename,
                                last_modified,
@@ -195,6 +196,9 @@ def update_annotation_callback(config,
         config.history_co_transport_n_clicks = n_clicks
         config.all_relayout_data = {'shapes': [], 'dragmode': 'drawclosedpath'}
     else:
+        if n_clicks_load_data > 0 and n_clicks_load_data != config.n_clicks_load_data:
+            config.n_clicks_load_data = n_clicks_load_data
+            config.all_relayout_data = {'shapes': [], 'dragmode': 'drawclosedpath'}
         metal_image = config.metal_data['metals'][selected_metal]
 
     padded_metal_image_rgb = process_metal_image(metal_image, threshold, vmin, vmax, colormap)

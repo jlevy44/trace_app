@@ -75,6 +75,7 @@ def generate_files_df_records(config, old_selected_rows=[]):
 
 def return_upload_files(config=None, return_cols=False,colname="Image File Name",files_to_upload_path=None,exts=None):
     assert (config is not None) or (exts is not None), "Must provide config or exts"
+    # print(files_to_upload_path,config.files_to_upload_path if config is not None else files_to_upload_path,exts,glob.glob(os.path.join(files_to_upload_path if files_to_upload_path is not None else config.files_to_upload_path,"*")))
     if exts is None:
         exts = config.file_extensions + [".pkl"]
     upload_files_df=pd.DataFrame(
@@ -158,10 +159,38 @@ def upload_file(config, list_of_contents, list_of_names, list_of_dates, upload_d
             if "_ppm" in k:
                 if np.prod(d[k].shape)>0:
                     d_[k.replace(" ","_").split("_")[-3]]=np.array(d[k])#[k.split("/")[-3 if k.split("/")[-3]!="LAICPMS" else -2]]#.replace(" ","_").split("_")[-4]
-        elements=list(d.keys())
+        elements=list(d_.keys())
         atomic_numbers=[int(re.sub(r"\D","",elem)) for elem in elements]
         
-        d_=OrderedDict([(elem,d[elem]) for elem in np.array(elements)[np.argsort(atomic_numbers)]])
+        d_=OrderedDict([(elem,d_[elem]) for elem in np.array(elements)[np.argsort(atomic_numbers)]])
+        d_["All"]=np.sum(list(d_.values()), axis=0)
+        d_=dict(metals=d_)
+        
+        pd.to_pickle(d_,f"/tmpdir/tmp_metals.pkl")
+        shutil.copy(f"/tmpdir/tmp_metals.pkl",os.path.join(os.path.abspath('./data/'+str(upload_data_folder_dropdown)),str(upload_data_folder_dropdown)+'_metals.pkl'))
+
+    return generate_files_df_records(config)[0]
+
+def upload_xlsx_file(config, selected_row, upload_data_folder_dropdown):
+    sample=pd.DataFrame.from_records(config.upload_files_df_data_xlsx).iloc[np.array(selected_row)].values.flatten()[0]
+    excel_files=glob.glob(os.path.join(config.files_to_upload_path,f"{sample} *_ppm matrix.xlsx"))
+    if excel_files is not None:
+        with ProgressBar():
+            d=dask.compute({f:dask.delayed(read_excel_fast_v3)(f) for f in excel_files},scheduler="single-threaded",num_workers=min(config.num_workers,len(excel_files)))[0]
+        d_=dict()#defaultdict(lambda : dict())
+        for k in d:
+            if "_ppm" in k:
+                if np.prod(d[k].shape)>0:
+                    d_[k.replace(" ","_").split("_")[-3]]=np.array(d[k])#[k.split("/")[-3 if k.split("/")[-3]!="LAICPMS" else -2]]#.replace(" ","_").split("_")[-4]
+        elements=list(d_.keys())
+        atomic_numbers_str=[re.sub(r"\D","",elem) for elem in elements]
+        atomic_numbers=[(int(atomic_number) if atomic_number else -1000) for atomic_number in atomic_numbers_str]
+        for elem,atomic_number in zip(elements,atomic_numbers):
+            if atomic_number==-1000:
+                elements.remove(elem)
+                atomic_numbers.remove(atomic_number)    
+        
+        d_=OrderedDict([(elem,d_[elem]) for elem in np.array(elements)[np.argsort(atomic_numbers)]])
         d_["All"]=np.sum(list(d_.values()), axis=0)
         d_=dict(metals=d_)
         
@@ -212,7 +241,7 @@ def upload_file_v2(config, _, upload_data_folder_dropdown, selected_rows):
     print('upload done')
 
     files_df = generate_files_df_records(config)[0]
-    config.upload_files_df_data = files_df
+    # config.upload_files_df_data = files_df
     
     return files_df,[]
 
@@ -227,6 +256,9 @@ def read_excel_fast_v2(xlsx_file,contents):
     content_type, content_string = contents.split(',')
     decoded = base64.b64decode(content_string)
     return pd.read_excel(io.BytesIO(decoded),engine="calamine")
+
+def read_excel_fast_v3(xlsx_file):
+    return pd.read_excel(xlsx_file,engine="calamine")
 
 def update_file_dir(config):
     upload_files_df_data=return_upload_files(config,exts=config.file_extensions+[".pkl"])

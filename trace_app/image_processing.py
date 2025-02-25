@@ -269,10 +269,10 @@ def generate_tissue_mask_func(config, n_clicks, threshold, old_selected_rows, me
 
         # Update file list
         files_df, files_df_columns, new_selected_rows = generate_files_df_records(config, old_selected_rows)
-        config.upload_files_df_data = files_df
+        # config.upload_files_df_data = files_df
         display_files_table = dash_table.DataTable(
             id='files_table',
-            selected_rows=new_selected_rows,
+            # selected_rows=new_selected_rows,
             columns=[{"name": i, "id": i} for i in files_df_columns],
             data=files_df,
             row_selectable='multi'
@@ -436,26 +436,12 @@ def update_pre_metals(config, colormap, selected_metal, vmin_vmax, threshold, al
     return blank_figure, blank_figure_right
 
 # @pysnooper.snoop()
-def change_two_images_and_clean_point_table(config, n_clicks, selected_rows):
+def change_two_images_and_clean_point_table(config, n_clicks, selected_rows, files_table_data):
     if n_clicks > 0 and selected_rows:
-        project_df_list, file_name_df_list, file_type_list = [], [], []
-        all_files_list = [f for f in os.listdir('./data/') if f != '.DS_Store']
-        
-        for project in all_files_list:
-            data_files = [f for f in os.listdir(f'./data/{project}') if f != '.DS_Store' and 'small' not in f]
-            for data_file in data_files:
-                ext = os.path.splitext(data_file)[1]
-                if ext in config.file_extensions:
-                    file_type_list.append('WSI')
-                elif ext == ".pkl":
-                    file_type_list.append('Metals')
-                elif ext == ".zarr":
-                    file_type_list.append("Exported Metals")
-                elif ext in ['.xml', ".json", ".geojson"]:
-                    file_type_list.append('Annotations')
-                project_df_list.append(project)
-                file_name_df_list.append(data_file)
-        
+        upload_files_df = pd.DataFrame.from_records(files_table_data)
+        project_df_list = upload_files_df['Project'].tolist()
+        file_name_df_list = upload_files_df['File Name'].tolist()
+        file_type_list = upload_files_df['File Type'].tolist()
         for idx in selected_rows:
             file_name = file_name_df_list[idx]
             project_name = project_df_list[idx]
@@ -1024,7 +1010,7 @@ def show_coregistered_images(config,n_clicks, table_data, old_selected_rows, thr
 
         display_files_table = dash_table.DataTable(
                                     id='files_table',
-                                    selected_rows = new_selected_rows,
+                                    # selected_rows = new_selected_rows,
                                     columns=[
                                         {"name": i, "id": i,} for i in files_df_columns
                                     ],
@@ -1159,7 +1145,7 @@ def show_coregistered_images(config, n_clicks, table_data, old_selected_rows, me
 
         display_files_table = dash_table.DataTable(
                                     id='files_table',
-                                    selected_rows = new_selected_rows,
+                                    # selected_rows = new_selected_rows,
                                     columns=[
                                         {"name": i, "id": i,} for i in files_df_columns
                                     ],

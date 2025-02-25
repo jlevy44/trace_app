@@ -13,7 +13,8 @@ class Config:
 
 LOW_MEMORY=bool(int(os.environ.get('LOW_MEMORY', '0')))
 
-file_extensions = [".tif", ".tiff", ".tif", ".tiff", ".ome.tif", ".ome.tiff", ".tif", ".tiff", ".dng", ".zif", ".stk", ".lsm", ".tif", ".tiff", ".tif", ".tiff", ".tif", ".tiff", ".sgi", ".rgb", ".rgba", ".bw", ".img", ".oif", ".oib", ".sis", ".tif", ".tiff", ".gel", ".svs", ".scn", ".bif", ".qptiff", ".qpi", ".pki", ".ndpi", ".avs", ".tif", ".tiff"]
+file_extensions = [".tif", ".tiff", ".ome.tif", ".ome.tiff", ".dng", ".zif", ".stk", ".lsm", ".sgi", ".rgb", ".rgba", ".bw", ".img", ".oif", ".oib", ".sis", ".gel", ".svs", ".scn", ".bif", ".qptiff", ".qpi", ".pki", ".ndpi", ".avs"]
+file_extensions+=list(map(lambda x:x.upper(),file_extensions))
 file_extensions = list(set(file_extensions))
 
 im_small_crop_annotation_tab = np.full((871, 1499, 3), 255, dtype=np.uint8)
@@ -174,6 +175,11 @@ display_files_table = dash_table.DataTable(
 upload_files_df_data,cols=return_upload_files(return_cols=True,files_to_upload_path=files_to_upload_path,exts=file_extensions+[".pkl"])
 
 upload_files_df_data_xlsx,cols_xlsx=return_upload_files(return_cols=True,colname="Elemental Image Excel File Name",files_to_upload_path=files_to_upload_path,exts=[".xlsx"])
+upload_files_df_data_xlsx=pd.DataFrame.from_records(upload_files_df_data_xlsx)
+upload_files_df_data_xlsx['Sample']=upload_files_df_data_xlsx[cols_xlsx[0]].map(lambda x: x.split()[0])
+upload_files_df_data_xlsx=upload_files_df_data_xlsx[['Sample']].drop_duplicates()
+upload_files_df_data_xlsx=upload_files_df_data_xlsx.to_dict('records')
+cols_xlsx=['Sample']
 
 df_co = {'image': [], 'element': [],}
 for one_metal in list(metal_data['metals'].keys()):
@@ -365,6 +371,7 @@ config.history_colormap = history_colormap
 config.history_vmin = history_vmin
 config.history_vmax = history_vmax
 config.history_co_transport_n_clicks = history_co_transport_n_clicks
+config.n_clicks_load_data = 0
 config.last_clickData_hne = last_clickData_hne
 
 # Settings

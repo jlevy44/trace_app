@@ -25,7 +25,8 @@ from .file_utils import (
     upload_file_v2,
     update_file_dir,
     make_new_folder,
-    display_selected_file
+    display_selected_file,
+    upload_xlsx_file
 )
 
 # Image Processing Functions
@@ -69,7 +70,8 @@ app = Dash(__name__,
                    'integrity': 'sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf',
                    'crossorigin': 'anonymous'
                }
-           ]
+           ],
+        #    external_scripts=["https://code.jquery.com/jquery-3.6.0.min.js"]
           )
 
 # Add custom CSS directly to the app
@@ -168,6 +170,17 @@ def upload_file_(list_of_contents, list_of_names, list_of_dates, upload_data_fol
     global config
     return upload_file(config, list_of_contents, list_of_names, list_of_dates, upload_data_folder_dropdown)
 
+@app.callback(
+    Output('files_table', 'data', allow_duplicate=True),
+    Input('upload_elemental_image_button', 'n_clicks'),
+    State('upload_elemental_image_table', 'selected_rows'),
+    State('upload_data_folder_dropdown', 'value'),
+    prevent_initial_call=True,
+)
+def upload_xlsx_file_(n_clicks, selected_row, upload_data_folder_dropdown):
+    global config
+    print(upload_data_folder_dropdown,selected_row)
+    return upload_xlsx_file(config, selected_row[0], upload_data_folder_dropdown)
 
 @app.callback(
     Output('upload_files_table', 'data'),
@@ -236,11 +249,12 @@ def display_selected_file_(n_clicks, selected_rows):
 
     Input('load_data_button', 'n_clicks'),
     State('files_table', 'selected_rows'),
+    State('files_table', 'data'),
     prevent_initial_call=True,
 )
-def change_two_images_and_clean_point_table_(n_clicks, selected_rows):
+def change_two_images_and_clean_point_table_(n_clicks, selected_rows, files_table_data):
     global config
-    results = change_two_images_and_clean_point_table(config, n_clicks, selected_rows)
+    results = change_two_images_and_clean_point_table(config, n_clicks, selected_rows, files_table_data)
     # Add default threshold values (e.g., 90) to the returned results
     return results 
 
@@ -273,6 +287,7 @@ def add_annotation_type_(n_clicks,
     Input('annotation_colormap', 'value'),
     Input('vmin_vmax_input', 'value'), 
     Input('start_co_button', 'n_clicks'),
+    Input('load_data_button', 'n_clicks'),
     Input('upload_annotation', 'contents'),
     Input('annotation_threshold_slider', 'value'),  # Add this new input
     State('upload_annotation', 'filename'),
@@ -284,13 +299,14 @@ def update_annotation_callback_(selected_metal,
                                colormap,
                                vmin_vmax,
                                n_clicks,
+                               n_clicks_load_data,
                                contents,
                                threshold,  # Add this new parameter
                                filename,
                                last_modified
                               ):
     global config
-    return update_annotation_callback(config, selected_metal, relayout_data, annotation_type, colormap, vmin_vmax, n_clicks, contents, filename, last_modified, threshold)
+    return update_annotation_callback(config, selected_metal, relayout_data, annotation_type, colormap, vmin_vmax, n_clicks, n_clicks_load_data, contents, filename, last_modified, threshold)
 
 @app.callback(
     Output('boxplot_dropdown', 'value'), 

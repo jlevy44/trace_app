@@ -13,7 +13,7 @@ from dash.dependencies import Input, Output, State, MATCH
 from dash.exceptions import PreventUpdate
 from dash_canvas.utils import array_to_data_url
 import dash_mantine_components as dmc
-
+# import dash_extensions.javascript as dj
 from .config_ import config
 
 # Update the color constants
@@ -165,6 +165,7 @@ TABLE_STYLE = {
     'borderRadius': '4px'
 }
 
+
 # Card components
 upload_data_card = dbc.Card(
     children=[
@@ -191,17 +192,27 @@ upload_data_card = dbc.Card(
                                      data=config.upload_files_df_data, row_selectable='multi')
             ], justify='start'),
             dbc.Row([
-                dbc.Col(dbc.Button("Upload Image Data", id="upload_button", size="sm", n_clicks=0, style={'width': '200px'}, className="me-1")),
+                dbc.Col(dbc.Button("Upload Whole Slide Image Data", id="upload_button", size="sm", n_clicks=0, style={'width': '200px'}, className="me-1")),
                 dbc.Col(dbc.Button("Update File List", id="update_button", size="sm", n_clicks=0, style={'width': '200px'}, className="me-1"))
             ])
         ], style=CARD_BODY_STYLE),
         dbc.CardFooter([
             dbc.Row([
+                html.Div([
                 html.Div("Upload multiple metals xlsx files and concat to pkl file: ", style={'font-weight': 'bold'}),
                 dcc.Upload(id='upload_multiple_xlsx_files', children=html.Div(['Drag and Drop or ', html.A('Select metals xlsx Files')]),
                            style={'width': '320px', 'height': '60px', 'lineHeight': '60px', 'borderWidth': '1px',
                                   'borderStyle': 'dashed', 'borderRadius': '5px', 'textAlign': 'center', 'margin': '10px'},
-                           multiple=True)
+                           multiple=True),
+                ], hidden=True),
+                html.Div("Select samples containing elemental images to upload: ", style={'font-weight': 'bold'}),
+                dash_table.DataTable(id='upload_elemental_image_table', columns=[{"name": i, "id": i} for i in config.cols_xlsx],
+                                     data=config.upload_files_df_data_xlsx, row_selectable='single'),
+                dbc.Button("Upload Elemental Image Data", id="upload_elemental_image_button", size="sm", n_clicks=0, style={'width': '200px'}, className="me-1"),
+
+                
+
+                
             ], justify='start')
         ], style=CARD_FOOTER_STYLE)
     ],
