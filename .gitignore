@@ -2,3 +2,4 @@ TRACE.spec
 build/
 dist/TRACE.app/
 dist/TRACE
+/TRACE.egg-info
