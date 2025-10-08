@@ -35,28 +35,42 @@ def run_application():
     low_memory = low_memory_var.get()
     low_memory_option = "-e LOW_MEMORY=1" if low_memory else ""
 
-    if detect_os() == "Windows":
-        command = (
-            f"powershell -Command \"cd '{project_dir}'; "
-            f"docker run --pull always -d -h localhost -p {port}:{port} "
-            f"-v '{project_dir}\\workdir:/workdir' "
-            f"-v '{project_dir}\\upload_dir:/upload_dir' "
-            f"-v '{project_dir}\\tmpdir:/tmpdir' "
-            f"-v '{project_dir}:/pwd' -w /workdir --rm {low_memory_option} "
-            f"joshualevy44/trace_app:latest sh -c 'cd /workdir && trace --port {port}'\""
-        )
-    elif detect_os() in ["Darwin", "Linux"]:
-        command = (
-            f"cd \"{project_dir}\" && "
-            f"docker run --pull always -d -h localhost -p {port}:{port} "
-            f"-v \"{project_dir}/workdir:/workdir\" "
-            f"-v \"{project_dir}/upload_dir:/upload_dir\" "
-            f"-v \"{project_dir}/tmpdir:/tmpdir\" "
-            f"-v \"{project_dir}:/pwd\" -w /workdir --rm {low_memory_option} "
-            f"joshualevy44/trace_app:latest sh -c 'cd /workdir && trace --port {port}'"
-        )
+    use_docker = use_docker_var.get()
+    conda_env = conda_env_entry.get()
+
+    if use_docker:
+        if detect_os() == "Windows":
+            command = (
+                f"powershell -Command \"cd '{project_dir}'; "
+                f"docker run --pull always -d -h localhost -p {port}:{port} "
+                f"-v '{project_dir}\\workdir:/workdir' "
+                f"-v '{project_dir}\\upload_dir:/upload_dir' "
+                f"-v '{project_dir}\\tmpdir:/tmpdir' "
+                f"-v '{project_dir}:/pwd' -w /workdir --rm {low_memory_option} "
+                f"joshualevy44/trace_app:latest sh -c 'cd /workdir && trace --port {port}'\""
+            )
+        elif detect_os() in ["Darwin", "Linux"]:
+            command = (
+                f"cd \"{project_dir}\" && "
+                f"docker run --pull always -d -h localhost -p {port}:{port} "
+                f"-v \"{project_dir}/workdir:/workdir\" "
+                f"-v \"{project_dir}/upload_dir:/upload_dir\" "
+                f"-v \"{project_dir}/tmpdir:/tmpdir\" "
+                f"-v \"{project_dir}:/pwd\" -w /workdir --rm {low_memory_option} "
+                f"joshualevy44/trace_app:latest sh -c 'cd /workdir && trace --port {port}'"
+            )
+        else:
+            raise Exception("Unsupported operating system")
     else:
-        raise Exception("Unsupported operating system")
+        if conda_env:
+            command = (
+                f"cd \"{project_dir}\" && "
+                f"conda activate {conda_env} && "
+                f"trace --port {port}"
+            )
+        else:
+            messagebox.showerror("Error", "Please specify a conda environment!")
+            return
 
     try:
         subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
@@ -100,8 +114,8 @@ root = tk.Tk()
 root.title("TRACE Application")
 
 # Configure the grid
-for i in range(3):
-    if i<2: root.columnconfigure(i, weight=1)
+for i in range(4):
+    if i<3: root.columnconfigure(i, weight=1)
     root.rowconfigure(i, weight=1)
 
 # Create and place the buttons
@@ -123,14 +137,29 @@ low_memory_var = tk.BooleanVar()
 low_memory_checkbox = tk.Checkbutton(root, text="Low Memory", variable=low_memory_var)
 low_memory_checkbox.grid(row=2, column=0, padx=10, pady=10, sticky="e")
 
+# Create and place the checkbox for using Docker
+use_docker_var = tk.BooleanVar(value=True)
+use_docker_checkbox = tk.Checkbutton(root, text="Use Docker", variable=use_docker_var)
+use_docker_checkbox.grid(row=2, column=1, padx=10, pady=10, sticky="e")
+
 # Create and place the label and text box for setting the port
 port_label = tk.Label(root, text="Set Port:")
-port_label.grid(row=2, column=1, padx=10, pady=10, sticky="e")
+port_label.grid(row=3, column=0, padx=10, pady=10, sticky="e")
 
 port_entry = tk.Entry(root)
-port_entry.grid(row=2, column=2, padx=10, pady=10, sticky="w")
+port_entry.grid(row=3, column=1, padx=10, pady=10, sticky="w")
 port_entry.insert(0, "8888")
 port_entry.bind("<FocusOut>", lambda event: update_port())
 
-if __name__ == "__main__":
+# Create and place the label and text box for setting the conda environment
+conda_env_label = tk.Label(root, text="Conda Env:")
+conda_env_label.grid(row=3, column=2, padx=10, pady=10, sticky="e")
+
+conda_env_entry = tk.Entry(root)
+conda_env_entry.grid(row=3, column=3, padx=10, pady=10, sticky="w")
+
+def main():
     root.mainloop()
+
+if __name__ == "__main__":
+    main()

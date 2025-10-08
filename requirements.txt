@@ -1,0 +1,40 @@
+# Core data processing and scientific computing
+numpy
+pandas
+scipy
+xarray
+
+# Image processing
+opencv-python
+tifffile
+scikit-image
+pyvips
+openslide-python
+
+# Geospatial data
+geopandas
+shapely
+
+# Visualization and plotting
+matplotlib
+plotly
+
+# Dash web framework and components
+dash
+dash-bootstrap-components
+dash-mantine-components
+dash-canvas
+
+# Data storage and processing
+h5py
+dask
+
+# Spatial data analysis
+spatialdata
+
+# File conversion and utilities
+xlsx2csv
+python-calamine
+
+# Debugging
+pysnooper
