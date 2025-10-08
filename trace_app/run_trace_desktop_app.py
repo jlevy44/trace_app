@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, simpledialog
 import subprocess
 import os
 import platform
@@ -35,10 +35,15 @@ def run_application():
     low_memory = low_memory_var.get()
     low_memory_option = "-e LOW_MEMORY=1" if low_memory else ""
 
-    use_docker = use_docker_var.get()
     conda_env = conda_env_entry.get()
 
-    if use_docker:
+    if conda_env:
+        command = (
+            f"cd \"{project_dir}\" && "
+            f"conda activate {conda_env} && "
+            f"trace --port {port}"
+        )
+    else:
         if detect_os() == "Windows":
             command = (
                 f"powershell -Command \"cd '{project_dir}'; "
@@ -61,16 +66,6 @@ def run_application():
             )
         else:
             raise Exception("Unsupported operating system")
-    else:
-        if conda_env:
-            command = (
-                f"cd \"{project_dir}\" && "
-                f"conda activate {conda_env} && "
-                f"trace --port {port}"
-            )
-        else:
-            messagebox.showerror("Error", "Please specify a conda environment!")
-            return
 
     try:
         subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
@@ -137,10 +132,15 @@ low_memory_var = tk.BooleanVar()
 low_memory_checkbox = tk.Checkbutton(root, text="Low Memory", variable=low_memory_var)
 low_memory_checkbox.grid(row=2, column=0, padx=10, pady=10, sticky="e")
 
-# Create and place the checkbox for using Docker
-use_docker_var = tk.BooleanVar(value=True)
-use_docker_checkbox = tk.Checkbutton(root, text="Use Docker", variable=use_docker_var)
-use_docker_checkbox.grid(row=2, column=1, padx=10, pady=10, sticky="e")
+# Create and place the button for using Conda
+def set_conda_env():
+    env_name = simpledialog.askstring("Conda Environment", "Enter Conda Environment Name:")
+    if env_name:
+        conda_env_entry.delete(0, tk.END)
+        conda_env_entry.insert(0, env_name)
+
+use_conda_button = tk.Button(root, text="Use Conda", command=set_conda_env)
+use_conda_button.grid(row=2, column=1, padx=10, pady=10, sticky="e")
 
 # Create and place the label and text box for setting the port
 port_label = tk.Label(root, text="Set Port:")
