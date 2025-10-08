@@ -123,16 +123,14 @@ run_button.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
 quit_button = tk.Button(root, text="3. Quit TRACE", command=quit_application)
 quit_button.grid(row=0, column=2, padx=10, pady=10, sticky="nsew")
 
-# Create and place the options label
+# Create and place the options label with low memory and conda options
 options_label = tk.Label(root, text="Options:")
-options_label.grid(row=1, column=0, columnspan=3, padx=10, pady=10, sticky="nsew")
+options_label.grid(row=1, column=0, padx=10, pady=10, sticky="e")
 
-# Create and place the checkbox for low memory option
 low_memory_var = tk.BooleanVar()
 low_memory_checkbox = tk.Checkbutton(root, text="Low Memory", variable=low_memory_var)
-low_memory_checkbox.grid(row=2, column=0, padx=10, pady=10, sticky="e")
+low_memory_checkbox.grid(row=1, column=1, padx=10, pady=10, sticky="w")
 
-# Create and place the button for using Conda
 def set_conda_env():
     env_name = simpledialog.askstring("Conda Environment", "Enter Conda Environment Name:")
     if env_name:
@@ -140,7 +138,7 @@ def set_conda_env():
         conda_env_entry.insert(0, env_name)
 
 use_conda_button = tk.Button(root, text="Use Conda", command=set_conda_env)
-use_conda_button.grid(row=2, column=1, padx=10, pady=10, sticky="e")
+use_conda_button.grid(row=1, column=2, padx=10, pady=10, sticky="w")
 
 # Create and place the label and text box for setting the port
 port_label = tk.Label(root, text="Set Port:")
@@ -154,9 +152,11 @@ port_entry.bind("<FocusOut>", lambda event: update_port())
 # Create and place the label and text box for setting the conda environment
 conda_env_label = tk.Label(root, text="Conda Env:")
 conda_env_label.grid(row=3, column=2, padx=10, pady=10, sticky="e")
+conda_env_label.grid_remove()  # Hide the label from the beginning
 
 conda_env_entry = tk.Entry(root)
 conda_env_entry.grid(row=3, column=3, padx=10, pady=10, sticky="w")
+conda_env_entry.grid_remove()  # Hide the grid element from the beginning
 
 def main():
     root.mainloop()
