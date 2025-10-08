@@ -14,7 +14,8 @@
 2. **Install necessary packages:**
 
    ```bash
-   conda install -c conda-forge libvips openslide
+   pip install pyvips-binary # if using Windows
+   conda install -c conda-forge libvips openslide # libvips should be excluded if using Windows
    ```
 
 3. **Install TRACE application:**

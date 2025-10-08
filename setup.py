@@ -4,9 +4,11 @@ import pathlib
 
 requirements = pathlib.Path('requirements.txt').read_text().splitlines()
 
+long_description = pathlib.Path('README.md').read_text()
+
 setup(
     name='TRACE',
-    version='0.1',
+    version='0.2',
     packages=['trace_app'],
     install_requires=requirements,
     entry_points={
@@ -15,4 +17,6 @@ setup(
             'trace_desktop_app=trace_app.run_trace_desktop_app:main',
         ],
     },
+    long_description=long_description,
+    long_description_content_type='text/markdown',
 )
