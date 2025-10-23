@@ -15,7 +15,7 @@
 
    ```bash
    pip install pyvips-binary # if using Windows
-   conda install -c conda-forge libvips openslide # libvips should be excluded if using Windows
+   conda install -c conda-forge libvips openslide glib # libvips should be excluded if using Windows
    ```
 
 3. **Install TRACE application:**
