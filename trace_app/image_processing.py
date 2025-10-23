@@ -96,7 +96,6 @@ def output_blank_hne(im_small_crop_annotation_tab):
     fig = add_click_grid(fig, im_small_crop_annotation_tab.shape[:2])
     return fig
 
-# @pysnooper.snoop()
 def generate_tissue_mask_func(config, n_clicks, threshold, old_selected_rows, metal_dropdown_pre, metal_colormap_pre):
 
     if n_clicks > 0:
@@ -263,7 +262,7 @@ def generate_tissue_mask_func(config, n_clicks, threshold, old_selected_rows, me
             config.metal_data_preprocess['metals'][one_key][~final_mask] = np.nan
 
         # Save preprocessed data
-        dump_path = f'./data/{config.selected_project}/preprocess_metals.pkl'
+        dump_path = os.path.join(config.workdir_data_path,f"{config.selected_project}/preprocess_metals.pkl")
         with open(dump_path, 'wb') as handle:
             pickle.dump(config.metal_data_preprocess, handle)
 
@@ -435,7 +434,6 @@ def update_pre_metals(config, colormap, selected_metal, vmin_vmax, threshold, al
 
     return blank_figure, blank_figure_right
 
-# @pysnooper.snoop()
 def change_two_images_and_clean_point_table(config, n_clicks, selected_rows, files_table_data):
     if n_clicks > 0 and selected_rows:
         upload_files_df = pd.DataFrame.from_records(files_table_data)
@@ -447,7 +445,7 @@ def change_two_images_and_clean_point_table(config, n_clicks, selected_rows, fil
             project_name = project_df_list[idx]
             config.selected_project = project_name
             
-            file_path = f'./data/{project_name}/{file_name}'
+            file_path = os.path.join(config.workdir_data_path,f"{project_name}/{file_name}")
             if os.path.splitext(file_path)[1] in config.file_extensions:
                 if not file_name.endswith("_small.tiff"):
                     file_path = f"{os.path.splitext(file_path)[0]}_small.tiff"
@@ -598,7 +596,6 @@ def change_two_images_and_clean_point_table(config, n_clicks, selected_rows, fil
         
         return [], white_fig_co, xy_coords_table, list(config.metal_data['metals'].keys()), selected_metal, blank_figure, blank_hne_image, fig_hne_co, selected_metal, all_metals_list, colormap, vmin_vmax, [selected_metal], all_metals_list, colormap, vmin_vmax, ['All'], ['All']+all_metals_list, colormap, vmin_vmax, blank_figure_pre, blank_figure_pre_right, selected_metal, list(config.metal_data['metals'].keys()), 0, 0, 0
 
-# @pysnooper.snoop()
 def update_back_to_image(config, table_data, metal_colormap_co, metal_dropdown_co, vmin_vmax_input_co, threshold):
     vmin, vmax = vmin_vmax_input_co[0], vmin_vmax_input_co[1]
     
@@ -933,7 +930,6 @@ def update_two_image_and_table(config, clickData_hne, clickData_metal, table_dat
                                             editable=True, row_deletable=True,)
             return xy_coords_table
 
-# @pysnooper.snoop()
 def show_coregistered_images(config,n_clicks, table_data, old_selected_rows, threshold):
     if n_clicks > 0:
         slide_x, slide_y, metals_x, metals_y = [], [], [], []
@@ -974,7 +970,7 @@ def show_coregistered_images(config,n_clicks, table_data, old_selected_rows, thr
         save_metal_data = {'metals': config.warped_metals,'homo':homo}
 
         project_df_list, file_name_df_list, file_type_list = [], [], []
-        all_files_list_first = os.listdir('./data/')
+        all_files_list_first = os.listdir(config.workdir_data_path)
         all_files_list = []
         for one_file in all_files_list_first:
             if one_file == '.DS_Store':
@@ -982,7 +978,7 @@ def show_coregistered_images(config,n_clicks, table_data, old_selected_rows, thr
             else:
                 all_files_list.append(one_file)
         for one_file in all_files_list:
-            data_files_under_list = os.listdir('./data/'+one_file)
+            data_files_under_list = os.listdir(os.path.join(config.workdir_data_path, one_file))
             for one_data in data_files_under_list:
                 if one_data == '.DS_Store':
                     continue
@@ -1003,7 +999,7 @@ def show_coregistered_images(config,n_clicks, table_data, old_selected_rows, thr
         for one_index in old_selected_rows:
             two_files_name_list.append(project_df_list[one_index]+file_name_df_list[one_index])
 
-        with open('./data/'+config.selected_project+'/coregistered_metals.pkl', 'wb') as fp:
+        with open(os.path.join(config.workdir_data_path,f"{config.selected_project}/coregistered_metals.pkl"), 'wb') as fp:
             pickle.dump(save_metal_data, fp)
 
         files_df,files_df_columns, new_selected_rows = generate_files_df_records(config, old_selected_rows, return_selected_rows=True)
@@ -1109,7 +1105,7 @@ def show_coregistered_images(config, n_clicks, table_data, old_selected_rows, me
         save_metal_data = {'metals': config.warped_metals, 'homo': homo}
     
         project_df_list, file_name_df_list, file_type_list = [], [], []
-        all_files_list_first = os.listdir('./data/')
+        all_files_list_first = os.listdir(config.workdir_data_path)
         all_files_list = []
         for one_file in all_files_list_first:
             if one_file == '.DS_Store':
@@ -1117,7 +1113,7 @@ def show_coregistered_images(config, n_clicks, table_data, old_selected_rows, me
             else:
                 all_files_list.append(one_file)
         for one_file in all_files_list:
-            data_files_under_list = os.listdir('./data/'+one_file)
+            data_files_under_list = os.listdir(os.path.join(config.workdir_data_path, one_file))
             for one_data in data_files_under_list:
                 if one_data == '.DS_Store':
                     continue
@@ -1138,7 +1134,7 @@ def show_coregistered_images(config, n_clicks, table_data, old_selected_rows, me
         for one_index in old_selected_rows:
             two_files_name_list.append(project_df_list[one_index]+file_name_df_list[one_index])
 
-        with open('./data/'+config.selected_project+'/coregistered_metals.pkl', 'wb') as fp:
+        with open(os.path.join(config.workdir_data_path,f"{config.selected_project}/coregistered_metals.pkl"), 'wb') as fp:
             pickle.dump(save_metal_data, fp)
 
         files_df,files_df_columns,new_selected_rows = generate_files_df_records(config, old_selected_rows)

@@ -50,7 +50,7 @@ def export_raw_data_on_click(config,_, project_name):
     metal_data_export["annotations"]=all_type_area_dict
     metal_data_export["annotations_polygons"]=all_type_area_list_dict
 
-    pd.to_pickle(metal_data_export,f"./data/{project_name}/exported_metals_annots.pkl")
+    pd.to_pickle(metal_data_export,os.path.join(config.workdir_data_path,f"{project_name}/exported_metals_annots.pkl"))
     images_dataarray = xr.DataArray(
         np.stack([metal_data_export["metals"][key] for key in metal_data_export["metals"]], axis=0),
         dims=["element", "r", "c"],
@@ -66,7 +66,7 @@ def export_raw_data_on_click(config,_, project_name):
         "annotations": annotations_dataarray
     })
 
-    combined_dataset.to_zarr(f"./data/{project_name}/exported_metals_annots.zarr",mode="w")
+    combined_dataset.to_zarr(os.path.join(config.workdir_data_path,f"{project_name}/exported_metals_annots.zarr"),mode="w")
 
     images_dataarray=combined_dataset['images']
     images_dataarray.attrs["element_names"] = images_dataarray.coords['element']  # Save unique names as metadata
@@ -87,7 +87,7 @@ def export_raw_data_on_click(config,_, project_name):
     annotations_obj = Labels2DModel.parse(annotations_with_background.rename({"r": "y", "c": "x"}))#,dims=("c","x","y"))
     spatial_data = SpatialData(images={"images": images_obj}, labels={"annotations": annotations_obj})
 
-    spatial_data.write(f"./data/{project_name}/exported_metals_annots_spatialdata.zarr")
+    spatial_data.write(os.path.join(config.workdir_data_path,f"{project_name}/exported_metals_annots_spatialdata.zarr"))
     
     files_df_records = generate_files_df_records(config)[0]
     return files_df_records

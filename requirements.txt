@@ -7,6 +7,7 @@ xarray
 # Image processing
 opencv-python
 tifffile
+imagecodecs
 scikit-image
 pyvips
 openslide-python
@@ -24,6 +25,9 @@ dash
 dash-bootstrap-components
 dash-mantine-components
 dash-canvas
+dash-core-components
+dash-html-components
+dash-table
 
 # Data storage and processing
 h5py

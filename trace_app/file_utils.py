@@ -28,11 +28,11 @@ import pysnooper
 
 def generate_files_df_records(config, old_selected_rows=[]):
     project_df_list, file_name_df_list, file_type_list = [], [], []
-    all_files_list_first = os.listdir('./data/')
+    all_files_list_first = os.listdir(config.workdir_data_path)
     all_files_list = [f for f in all_files_list_first if f != '.DS_Store']
     
     for one_file in all_files_list:
-        data_files_under_list = os.listdir(os.path.join('./data/', one_file))
+        data_files_under_list = os.listdir(os.path.join(config.workdir_data_path, one_file))
         for one_data in data_files_under_list:
             if one_data == '.DS_Store' or 'small' in one_data:
                 continue
@@ -78,14 +78,24 @@ def return_upload_files(config=None, return_cols=False,colname="Image File Name"
     # print(files_to_upload_path,config.files_to_upload_path if config is not None else files_to_upload_path,exts,glob.glob(os.path.join(files_to_upload_path if files_to_upload_path is not None else config.files_to_upload_path,"*")))
     if exts is None:
         exts = config.file_extensions + [".pkl"]
-    upload_files_df=pd.DataFrame(
-        {colname:np.vectorize(os.path.basename)(list(reduce(lambda x,y:x+y,[glob.glob(os.path.join(files_to_upload_path if files_to_upload_path is not None else config.files_to_upload_path,f"*{ext}")) for ext in exts])))}
-    )
+    files_by_ext = {}
+    for ext in exts:
+        pattern = os.path.join(
+            files_to_upload_path if files_to_upload_path is not None else config.files_to_upload_path,
+            f"*{ext}"
+        )
+        files = glob.glob(pattern)
+        files_by_ext[ext] = files
+    all_files = list(reduce(lambda x, y: x + y, files_by_ext.values()))
+    if len(all_files) > 0:
+        col_values = np.vectorize(os.path.basename)(all_files)
+    else:
+        col_values = []
+    upload_files_df = pd.DataFrame({colname: col_values})
     if not return_cols:
         return upload_files_df.to_dict("records")
     return upload_files_df.to_dict("records"),upload_files_df.columns
 
-# @pysnooper.snoop()
 def parse_contents(config,filename):
 
     read_path = config.files_to_upload_path+str(filename)
@@ -104,18 +114,38 @@ def parse_contents(config,filename):
             ])
     return df
 
-
+# @pysnooper.snoop()
 def upload_contents(config,filename, project_name):
     print('start function')
-    if os.path.splitext(filename)[1] in config.file_extensions:
+    path = os.path.join(config.files_to_upload_path, filename)
+    ext = os.path.splitext(filename)[1].lower()
+    os_path = path#("" if ext in ['.svs','.tif','.tiff'] else "openslide:")+
+
+    if ext in config.file_extensions:
         if not config.LOW_MEMORY:
-            image = tiff.imread(config.files_to_upload_path+filename)
+            image = tiff.imread(path)
             im_width,im_height = image.shape[1], image.shape[0]
         else:
-            im_metadata = openslide.OpenSlide(config.files_to_upload_path+filename)
-            im_width,im_height = im_metadata.dimensions
-            im = pyvips.Image.thumbnail(config.files_to_upload_path + filename, int(0.25 * im_width))#pyvips.Image.new_from_file(files_to_upload_path + filename).resize(0.25)
-            image = im.numpy()
+            ext_lower = os.path.splitext(filename)[1].lower()
+            if ext_lower in ['.svs', '.tif', '.tiff']:
+                os.environ.setdefault("VIPS_CONCURRENCY", "1")       # lower peak RAM
+                os.environ.setdefault("VIPS_DISC_THRESHOLD", "10m")  # spill to disk sooner
+                import pyvips
+
+                pyvips.cache_set_max_mem(200 * 1024 * 1024)
+                hdr = pyvips.Image.new_from_file(os_path, access="sequential")
+                im_width, im_height = hdr.width, hdr.height
+                thumb_width = max(1, int(0.25 * im_width))
+                im = pyvips.Image.thumbnail(os_path, thumb_width)
+                image = im.numpy()
+            else:
+                import openslide
+                s = openslide.OpenSlide(os_path)
+                im_width, im_height = s.dimensions
+                thumb_width = max(1, int(0.25 * im_width))
+                thumb_height = max(1, int(0.25 * im_height))
+                thumb = s.get_thumbnail((thumb_width, thumb_height))
+                image = np.array(thumb)
         com_1 = image.shape[0]/1500
         com_2 = image.shape[1]/1500
         compressed_image = cv2.resize(image,None,fx=1/max(com_1, com_2),fy=1/max(com_1, com_2))
@@ -138,16 +168,19 @@ def upload_contents(config,filename, project_name):
                                           project_name+os.path.splitext(filename)[0]+'.svs': 1/max(com_1, com_2)})
             with open('compression_value_dict.json', 'w') as json_file:
                 json.dump(compression_value_dict, json_file)
-        os.system("touch "+'./data/'+project_name+'/'+os.path.splitext(filename)[0]+'.tiff')
-        tiff.imwrite('./data/'+project_name+'/'+os.path.splitext(filename)[0]+'_small.tiff', compressed_image, photometric='rgb')
+        # os.system("touch "+os.path.join(config.workdir_data_path,f"{project_name}/"+os.path.splitext(filename)[0]+'.tiff'))
+        with open(os.path.join(config.workdir_data_path,f"{project_name}/"+os.path.splitext(filename)[0]+'.tiff'), "w") as f:
+            pass
+        tiff.imwrite(os.path.join(config.workdir_data_path,f"{project_name}/"+os.path.splitext(filename)[0]+'_small.tiff'), compressed_image, photometric='rgb')
     elif '.pkl' in filename:
         with open(config.files_to_upload_path+filename, "rb") as file:
             metal_dict = pickle.load(file)
-        with open('./data/'+project_name+'/'+os.path.splitext(filename)[0]+'.pkl', 'wb') as handle:
+        with open(os.path.join(config.workdir_data_path,f"{project_name}/"+os.path.splitext(filename)[0]+'.pkl'), 'wb') as handle:
             pickle.dump(metal_dict, handle)
 
-
+# @pysnooper.snoop()
 def upload_file(config, list_of_contents, list_of_names, list_of_dates, upload_data_folder_dropdown):
+    tmp_metal_path = os.path.join(config.tmp_folder_path, "tmp_metals.pkl")
     temp_metal_dict = {}
     print(list_of_names)
     if list_of_names is not None:
@@ -166,12 +199,14 @@ def upload_file(config, list_of_contents, list_of_names, list_of_dates, upload_d
         d_["All"]=np.sum(list(d_.values()), axis=0)
         d_=dict(metals=d_)
         
-        pd.to_pickle(d_,f"/tmpdir/tmp_metals.pkl")
-        shutil.copy(f"/tmpdir/tmp_metals.pkl",os.path.join(os.path.abspath('./data/'+str(upload_data_folder_dropdown)),str(upload_data_folder_dropdown)+'_metals.pkl'))
+        pd.to_pickle(d_,tmp_metal_path)
+        shutil.copy(tmp_metal_path,os.path.join(os.path.abspath(config.workdir_data_path),f"{upload_data_folder_dropdown}/"+str(upload_data_folder_dropdown)+'_metals.pkl'))
 
     return generate_files_df_records(config)[0]
 
+# @pysnooper.snoop()
 def upload_xlsx_file(config, selected_row, upload_data_folder_dropdown):
+    tmp_metal_path = os.path.join(config.tmp_folder_path, "tmp_metals.pkl")
     sample=pd.DataFrame.from_records(config.upload_files_df_data_xlsx).iloc[np.array(selected_row)].values.flatten()[0]
     excel_files=glob.glob(os.path.join(config.files_to_upload_path,f"{sample} *_ppm matrix.xlsx"))
     if excel_files is not None:
@@ -194,12 +229,13 @@ def upload_xlsx_file(config, selected_row, upload_data_folder_dropdown):
         d_["All"]=np.sum(list(d_.values()), axis=0)
         d_=dict(metals=d_)
         
-        pd.to_pickle(d_,f"/tmpdir/tmp_metals.pkl")
-        shutil.copy(f"/tmpdir/tmp_metals.pkl",os.path.join(os.path.abspath('./data/'+str(upload_data_folder_dropdown)),str(upload_data_folder_dropdown)+'_metals.pkl'))
+        pd.to_pickle(d_,tmp_metal_path)
+        shutil.copy(tmp_metal_path,os.path.join(os.path.abspath(config.workdir_data_path),f"{upload_data_folder_dropdown}/"+str(upload_data_folder_dropdown)+'_metals.pkl'))
 
     return generate_files_df_records(config)[0]
 
 def upload_file(config, list_of_contents, list_of_names, list_of_dates, upload_data_folder_dropdown):
+    tmp_metal_path = os.path.join(config.tmp_folder_path, "tmp_metals.pkl")
     temp_metal_dict = {}
     elements_search = '|'.join(f'(?:{element})' for element in config.elements)
     elements_pattern = re.compile(rf'.*\s+({elements_search})\d+_ppm.*\.xlsx$')
@@ -226,8 +262,8 @@ def upload_file(config, list_of_contents, list_of_names, list_of_dates, upload_d
         d_["All"]=np.sum(list(d_.values()), axis=0)
         d_=dict(metals=d_)
         
-        pd.to_pickle(d_,f"/tmpdir/tmp_metals.pkl")
-        shutil.copy(f"/tmpdir/tmp_metals.pkl",os.path.join(os.path.abspath('./data/'+str(upload_data_folder_dropdown)),str(upload_data_folder_dropdown)+'_metals.pkl'))
+        pd.to_pickle(d_,tmp_metal_path)
+        shutil.copy(tmp_metal_path,os.path.join(os.path.abspath(config.workdir_data_path),f"{upload_data_folder_dropdown}/"+str(upload_data_folder_dropdown)+'_metals.pkl'))
 
     return generate_files_df_records(config)[0]
 
@@ -269,7 +305,7 @@ def make_new_folder(config, n_clicks, new_folder_input, upload_data_folder_dropd
     if n_clicks > 0:
         if new_folder_input != None:
             if new_folder_input not in upload_data_folder_dropdown:
-                os.mkdir('./data/'+new_folder_input)
+                os.mkdir(config.workdir_data_path+'/'+new_folder_input)
                 upload_data_folder_dropdown.append(new_folder_input)
     return upload_data_folder_dropdown
 
@@ -284,7 +320,7 @@ def display_selected_file(config, n_clicks, selected_rows):
             print('display selected_rows', selected_rows)
 
             project_df_list, file_name_df_list, file_type_list = [], [], []
-            all_files_list_first = os.listdir('./data/')
+            all_files_list_first = os.listdir(config.workdir_data_path)
             all_files_list = []
             for one_file in all_files_list_first:
                 if one_file == '.DS_Store':
@@ -292,7 +328,7 @@ def display_selected_file(config, n_clicks, selected_rows):
                 else:
                     all_files_list.append(one_file)
             for one_file in all_files_list:
-                data_files_under_list = os.listdir('./data/'+one_file)
+                data_files_under_list = os.listdir(os.path.join(config.workdir_data_path, one_file))
                 for one_data in data_files_under_list:
                     if one_data == '.DS_Store':
                         continue
@@ -314,7 +350,7 @@ def display_selected_file(config, n_clicks, selected_rows):
                     one_project_name = project_df_list[one_file_name_index]
                     print('display', str(one_file_name))
                     
-                    file_path = './data/'+one_project_name+'/'+one_file_name
+                    file_path = os.path.join(config.workdir_data_path,f"{one_project_name}/{one_file_name}")
                     if os.path.splitext(one_file_name)[1] in config.file_extensions:
                         with open('compression_value_dict.json', 'r') as json_file:
                             compression_value_dict = json.load(json_file)

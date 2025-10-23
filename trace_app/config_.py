@@ -45,12 +45,25 @@ selected_project = ''
 
 files_to_upload_path = '/upload_dir/'
 num_workers=os.cpu_count()-1
+workdir_data_path = "./data"
+tmp_folder_path="/tmpdir"
+
+if os.environ['PROJECT_DIR'] is not None and len(os.environ['PROJECT_DIR']) > 0 and os.path.exists(os.environ['PROJECT_DIR']):
+    print('PROJECT_DIR', os.environ['PROJECT_DIR'])
+    project_dir = os.environ['PROJECT_DIR']
+    files_to_upload_path = os.path.join(project_dir, "upload_dir/")
+    tmp_folder_path = os.path.join(project_dir, "tmpdir/")
+    workdir_path = os.path.join(project_dir, "workdir/")
+    workdir_data_path = os.path.join(workdir_path, "data/")
+    for folder_path in ["","workdir", "upload_dir", "tmpdir", "workdir/data"]:
+        os.makedirs(os.path.join(project_dir, folder_path), exist_ok=True)
+    os.chdir(workdir_path)
 
 project_df_list, file_name_df_list, file_type_list = [], [], []
 
-if not os.path.exists('./data/'):
-    os.makedirs('./data/',exist_ok=True)
-all_files_list_first = os.listdir('./data/')
+# if not os.path.exists('./data/'):
+#     os.makedirs('./data/',exist_ok=True)
+all_files_list_first = os.listdir(workdir_data_path)
 all_files_list = []
 for one_file in all_files_list_first:
     if one_file == '.DS_Store':
@@ -58,7 +71,7 @@ for one_file in all_files_list_first:
     else:
         all_files_list.append(one_file)
 for one_file in all_files_list:
-    data_files_under_list = os.listdir('./data/'+one_file)
+    data_files_under_list = os.listdir(os.path.join(workdir_data_path, one_file))
     for one_data in data_files_under_list:
         if one_data == '.DS_Store':
             continue
@@ -227,7 +240,7 @@ image_no_axis_layout = go.Layout(
     yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
 )
 
-temp_folder_list = os.listdir('./data/')
+temp_folder_list = os.listdir(workdir_data_path)
 try:
     temp_folder_list.remove('.DS_Store')
 except:
@@ -318,6 +331,10 @@ config.select_pkl_file = None
 config.selected_project = selected_project
 config.temp_folder_list = temp_folder_list
 config.files_to_upload_path = files_to_upload_path
+config.tmp_folder_path = tmp_folder_path
+config.workdir_data_path = workdir_data_path
+config.workdir_path = workdir_path
+config.project_dir = project_dir
 
 # Data structures
 config.metal_data = metal_data
