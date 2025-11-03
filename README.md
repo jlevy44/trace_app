@@ -1,4 +1,15 @@
-# TRACE Application
+## TRACE: Tissue Region Analysis through Co-registration of Elemental Maps
+
+![](images/trace_demo.png)
+
+### Overview
+TRACE is an advanced containerized web application designed for the detailed analysis of tissue regions by co-registering Whole Slide Images (WSI) with elemental maps. This tool enhances the precision of metal bioaccumulation studies by allowing targeted analysis within specific tissue areas, integrating seamlessly with hematoxylin and eosin (H&E) slides for effective comparison across various pathological conditions.
+
+### Features
+- **Detailed Elemental Profiling**: Targets specific tissue areas for precise metal bioaccumulation analysis.
+- **Co-registration with WSI**: Facilitates effective comparison and analysis by integrating with H&E slides.
+- **Interactive Web Application**: Includes features like real-time annotation editing, advanced statistical tools, and comprehensive data export functionalities.
+- **Enhanced Spatial Analysis**: Supports the comparison of elemental abundances across annotated tissue structures and integrates with other spatial data types.
 
 ## Setup Instructions
 
