@@ -3,3 +3,4 @@ build/
 dist/TRACE.app/
 dist/TRACE
 /TRACE.egg-info
+.DS_Store

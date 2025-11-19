@@ -9,7 +9,7 @@ opencv-python
 tifffile
 imagecodecs
 scikit-image
-pyvips
+"pyvips[binary]"
 openslide-python
 
 # Geospatial data
