@@ -200,7 +200,6 @@ def run_application():
 
 def quit_application():
     import platform
-    import psutil
     global port
     env_mode = env_mode_var.get()
     # For Docker mode
@@ -221,6 +220,7 @@ def quit_application():
     # For non-Docker mode (Current Shell/Conda)
     else:
         try:
+            import psutil
             import re
             # Look for processes with "trace" in the command line (excluding this process)
             current_pid = psutil.Process().pid

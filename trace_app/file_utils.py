@@ -133,14 +133,46 @@ def read_thumbnail_pyvips(path, scale=0.25):
     import numpy as np
     import os
 
-    # Memory safety settings
+    # memory safety settings
     os.environ.setdefault("VIPS_CONCURRENCY", "1")
     os.environ.setdefault("VIPS_DISC_THRESHOLD", "10m")
     pyvips.cache_set_max_mem(200 * 1024 * 1024)
 
+    # load header only
     hdr = pyvips.Image.new_from_file(path, access="sequential")
-    w, h = hdr.width, hdr.height
+    n_pages = hdr.get("n-pages")    # number of pages (CHW)
+    bands   = hdr.bands             # number of channels per page (HWC)
 
+    # -------------------------
+    # CASE 1 — HWC (normal RGB)
+    # -------------------------
+    if n_pages == 1 and bands > 1:
+        w, h = hdr.width, hdr.height
+        tw = max(1, int(w * scale))
+        im = pyvips.Image.thumbnail(path, tw)
+        return (w, h), im.numpy()
+
+    # -------------------------
+    # CASE 2 — CHW (multi-page OME-TIFF)
+    # use channel 0 as thumbnail source
+    # -------------------------
+    if n_pages > 1 and bands == 1:
+        # load channel 0
+        thumbs = []
+        for page in range(n_pages):
+            ch = pyvips.Image.new_from_file(path,
+                                            access="sequential",
+                                            page=page)
+            w, h = ch.width, ch.height
+            tw = max(1, int(w * scale))
+            thumb = ch.thumbnail_image(tw)
+            thumbs.append(thumb.numpy())
+        return (w, h), np.array(thumbs).transpose(1, 2, 0)
+
+    # -------------------------
+    # CASE 3 — fallback
+    # -------------------------
+    w, h = hdr.width, hdr.height
     tw = max(1, int(w * scale))
     im = pyvips.Image.thumbnail(path, tw)
     return (w, h), im.numpy()
@@ -150,7 +182,7 @@ def read_thumbnail_lowmem(path, filename):
     ext = os.path.splitext(filename)[1].lower()
 
     # Formats pyvips can handle well
-    pyvips_exts = {'.svs', '.tif', '.tiff'}
+    pyvips_exts = {'.svs', '.tif', '.tiff', '.ome.tif', '.ome.tiff'}
 
     if ext in pyvips_exts:
         # Try pyvips first (faster & lower memory)
@@ -173,10 +205,12 @@ def upload_contents(config,filename, project_name):
     if ext in config.file_extensions:
         if not config.LOW_MEMORY:
             image = tiff.imread(path)
+            if image.shape[0] == 3:
+                image = image.transpose(1, 2, 0)
             im_width,im_height = image.shape[1], image.shape[0]
         else:
             ext_lower = os.path.splitext(filename)[1].lower()
-            if ext_lower in ['.svs', '.tif', '.tiff']:
+            if ext_lower in ['.svs', '.tif', '.tiff', '.ome.tif', '.ome.tiff']:
                 (im_width, im_height), image = read_thumbnail_lowmem(os_path, filename)
         com_1 = image.shape[0]/1500
         com_2 = image.shape[1]/1500
