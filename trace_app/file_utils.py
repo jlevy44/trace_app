@@ -163,7 +163,7 @@ def read_thumbnail_lowmem(path, filename):
     # All other formats → OpenSlide
     return read_thumbnail_openslide(path)
 
-# @pysnooper.snoop()
+@pysnooper.snoop()
 def upload_contents(config,filename, project_name):
     print('start function')
     path = os.path.join(config.files_to_upload_path, filename)
@@ -177,8 +177,6 @@ def upload_contents(config,filename, project_name):
         else:
             ext_lower = os.path.splitext(filename)[1].lower()
             if ext_lower in ['.svs', '.tif', '.tiff']:
-                os.environ.setdefault("VIPS_CONCURRENCY", "1")       # lower peak RAM
-                os.environ.setdefault("VIPS_DISC_THRESHOLD", "10m")  # spill to disk sooner
                 (im_width, im_height), image = read_thumbnail_lowmem(os_path, filename)
         com_1 = image.shape[0]/1500
         com_2 = image.shape[1]/1500
