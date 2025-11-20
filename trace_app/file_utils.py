@@ -163,6 +163,13 @@ def read_thumbnail_pyvips(path, scale=0.25):
             ch = pyvips.Image.new_from_file(path,
                                             access="sequential",
                                             page=page)
+            # Convert to uint8 if necessary before thumbnailing
+            if ch.format == 'ushort':
+                info = ch.range
+                maxval = info[1] if len(info) > 1 else 65535
+                # Rescale to 0-255, ensure float division
+                ch = ch.cast('float') * (255.0 / maxval)
+                ch = ch.cast('uchar')
             w, h = ch.width, ch.height
             tw = max(1, int(w * scale))
             thumb = ch.thumbnail_image(tw)
@@ -195,7 +202,7 @@ def read_thumbnail_lowmem(path, filename):
     # All other formats → OpenSlide
     return read_thumbnail_openslide(path)
 
-@pysnooper.snoop()
+# @pysnooper.snoop()
 def upload_contents(config,filename, project_name):
     print('start function')
     path = os.path.join(config.files_to_upload_path, filename)
