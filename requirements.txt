@@ -42,3 +42,4 @@ python-calamine
 
 # Debugging
 pysnooper
+psutil
