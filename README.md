@@ -49,7 +49,7 @@ TRACE is an advanced containerized web application designed for the detailed ana
    ```bash
    set BF_MAX_MEMORY=12g # Windows
    export BF_MAX_MEMORY=12g # Mac/Linux
-   bfconvert -tilex 2048 -tiley 2048 /original_path/image_file.lof /new_path/image_file.ome.tif
+   bfconvert -tilex 2048 -tiley 2048 -map rgb -bigtiff /original_path/image_file.lof /new_path/image_file.tiff
    ```
 
 ### Running the Desktop Application
