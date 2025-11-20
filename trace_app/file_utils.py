@@ -127,14 +127,14 @@ def read_thumbnail_openslide(path, scale=0.25):
     thumb = slide.get_thumbnail((tw, th))
     return (w, h), np.array(thumb)
 
-def vips_to_uint8_dynamic(im):
+def vips_to_uint8_dynamic(im, quantile=0.95):
     import pyvips
     
     # im must be pyvips.Image
     
     # get min and max efficiently (pyvips streams)
     min_val = im.min()
-    max_val = im.max()
+    max_val = np.quantile(im.flatten(), quantile) if quantile is not None else im.max() 
 
     # avoid div-by-zero
     if max_val == min_val:
