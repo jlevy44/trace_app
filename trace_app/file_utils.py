@@ -127,6 +127,26 @@ def read_thumbnail_openslide(path, scale=0.25):
     thumb = slide.get_thumbnail((tw, th))
     return (w, h), np.array(thumb)
 
+def vips_to_uint8_dynamic(im):
+    import pyvips
+    
+    # im must be pyvips.Image
+    
+    # get min and max efficiently (pyvips streams)
+    min_val = im.min()
+    max_val = im.max()
+
+    # avoid div-by-zero
+    if max_val == min_val:
+        return im.cast("uchar")
+
+    # scale to 0–255 dynamically
+    scale = 255.0 / (max_val - min_val)
+    im_8 = (im - min_val) * scale
+
+    # cast to uint8
+    return im_8.cast("uchar")
+
 
 def read_thumbnail_pyvips(path, scale=0.25):
     import pyvips
@@ -150,7 +170,8 @@ def read_thumbnail_pyvips(path, scale=0.25):
         w, h = hdr.width, hdr.height
         tw = max(1, int(w * scale))
         if hdr.format == "ushort":        # uint16 in pyvips
-            hdr = (hdr >> 8).cast("uchar") # uint16 → uint8
+            #hdr = (hdr >> 8).cast("uchar") # uint16 → uint8
+            hdr = vips_to_uint8_dynamic(hdr)
         im = pyvips.Image.thumbnail(path, tw)
         return (w, h), im.numpy()
 
@@ -166,7 +187,8 @@ def read_thumbnail_pyvips(path, scale=0.25):
                                             access="sequential",
                                             page=page)
             if ch.format == "ushort":        # uint16 in pyvips
-                ch = (ch >> 8).cast("uchar") # uint16 → uint8
+                #ch = (ch >> 8).cast("uchar") # uint16 → uint8
+                ch = vips_to_uint8_dynamic(ch)
             w, h = ch.width, ch.height
             tw = max(1, int(w * scale))
             thumb = ch.thumbnail_image(tw)
@@ -179,7 +201,8 @@ def read_thumbnail_pyvips(path, scale=0.25):
     w, h = hdr.width, hdr.height
     tw = max(1, int(w * scale))
     if hdr.format == "ushort":        # uint16 in pyvips
-        hdr = (hdr >> 8).cast("uchar") # uint16 → uint8
+        #hdr = (hdr >> 8).cast("uchar") # uint16 → uint8
+        hdr = vips_to_uint8_dynamic(hdr)
     im = pyvips.Image.thumbnail(path, tw)
     return (w, h), im.numpy()
 
