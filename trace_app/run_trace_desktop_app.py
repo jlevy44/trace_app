@@ -200,6 +200,7 @@ def run_application():
 
 def quit_application():
     import platform
+    import psutil
     global port
     env_mode = env_mode_var.get()
     # For Docker mode
@@ -219,29 +220,38 @@ def quit_application():
             messagebox.showinfo("Error", "No TRACE process is running.")
     # For non-Docker mode (Current Shell/Conda)
     else:
-        # Try to kill any process running "trace" as main process
         try:
-            sys_platform = platform.system()
-            success = False
-            if sys_platform == "Windows":
-                # Use tasklist & taskkill, as in prompt
-                # Batch command to kill processes named trace*
-                cmd = r'for /f "tokens=1,*" %A in (\'tasklist ^| findstr /i "^trace"\') do taskkill /IM %A /F'
-                exitcode = os.system(cmd)
-                success = exitcode == 0
-            elif sys_platform == "Darwin":
-                # MacOS
-                exitcode = os.system("pkill -f '^trace'")
-                # pkill returns 0 if matches, 1 if no matches found
-                success = (exitcode == 0)
-            elif sys_platform == "Linux":
-                # Linux: use the same pkill as mac, or try both variants
-                exitcode = os.system("pkill -f '^trace'")
-                success = (exitcode == 0)
-            else:
-                raise Exception(f"Unsupported platform for TRACE termination: {sys_platform}")
-
-            if success:
+            import re
+            # Look for processes with "trace" in the command line (excluding this process)
+            current_pid = psutil.Process().pid
+            killed_any = False
+            for proc in psutil.process_iter(attrs=['pid', 'name', 'cmdline']):
+                try:
+                    pid = proc.info['pid']
+                    if pid == current_pid:
+                        continue  # Don't kill ourselves!
+                    cmdline = proc.info['cmdline']
+                    if not cmdline:
+                        continue
+                    # See if 'trace' is in any of the command line arguments (case-insensitive, as a command)
+                    # Require that it's at the start or after a space or slash
+                    # eg: "trace", "trace.exe", "python ... trace", etc
+                    command_str = ' '.join(cmdline).lower()
+                    # Typical forms: 'python -m trace', 'python trace', '.venv/bin/trace' or 'trace'
+                    # Avoid processes that are running THIS desktop app helper (run_trace_desktop_app)
+                    # We want to kill only those that run "trace" but not "run_trace_desktop_app"
+                    # Also, the conda environment may be named "trace", so ensure we match the trace PROCESS, not just the env var
+                    if (
+                        # Match "trace", "trace.py", or "trace.exe" as a standalone command or module,
+                        # but do NOT match if it's only part of an environment path or variable
+                        re.search(r'(\b|\s)(python(\d(\.\d)*)?(\s+-m)?\s+)?trace(\.py|\.exe)?(\s|$)', command_str)
+                        and 'run_trace_desktop_app' not in command_str
+                    ):
+                        proc.kill()
+                        killed_any = True
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    continue
+            if killed_any:
                 messagebox.showinfo("Success", f"TRACE has been terminated ({env_mode}).")
             else:
                 messagebox.showinfo("Error", f"No TRACE process found to terminate in {env_mode} mode.")
