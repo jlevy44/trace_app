@@ -149,6 +149,8 @@ def read_thumbnail_pyvips(path, scale=0.25):
     if n_pages == 1 and bands > 1:
         w, h = hdr.width, hdr.height
         tw = max(1, int(w * scale))
+        if hdr.format == "ushort":        # uint16 in pyvips
+            hdr = (hdr >> 8).cast("uchar") # uint16 → uint8
         im = pyvips.Image.thumbnail(path, tw)
         return (w, h), im.numpy()
 
@@ -163,13 +165,8 @@ def read_thumbnail_pyvips(path, scale=0.25):
             ch = pyvips.Image.new_from_file(path,
                                             access="sequential",
                                             page=page)
-            # Convert to uint8 if necessary before thumbnailing
-            if ch.format == 'ushort':
-                info = ch.range
-                maxval = info[1] if len(info) > 1 else 65535
-                # Rescale to 0-255, ensure float division
-                ch = ch.cast('float') * (255.0 / maxval)
-                ch = ch.cast('uchar')
+            if ch.format == "ushort":        # uint16 in pyvips
+                ch = (ch >> 8).cast("uchar") # uint16 → uint8
             w, h = ch.width, ch.height
             tw = max(1, int(w * scale))
             thumb = ch.thumbnail_image(tw)
@@ -181,6 +178,8 @@ def read_thumbnail_pyvips(path, scale=0.25):
     # -------------------------
     w, h = hdr.width, hdr.height
     tw = max(1, int(w * scale))
+    if hdr.format == "ushort":        # uint16 in pyvips
+        hdr = (hdr >> 8).cast("uchar") # uint16 → uint8
     im = pyvips.Image.thumbnail(path, tw)
     return (w, h), im.numpy()
 
