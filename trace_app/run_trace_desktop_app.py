@@ -69,6 +69,7 @@ def run_application():
     env_mode = env_mode_var.get()
     conda_env = conda_env_entry.get().strip()
     current_os = detect_os()
+    port = port_entry.get()
 
     if env_mode == "Current Shell":
         if current_os == "Windows":
@@ -198,20 +199,54 @@ def run_application():
         messagebox.showerror("Error", f"Failed to run application: {e}")
 
 def quit_application():
+    import platform
     global port
-    if port:
+    env_mode = env_mode_var.get()
+    # For Docker mode
+    if env_mode == "Docker":
+        if port:
+            try:
+                command = f"docker ps --filter publish={port} -q"
+                container_id = os.popen(command).read().strip()
+                if container_id:
+                    os.system(f"docker stop {container_id}")
+                    messagebox.showinfo("Success", "TRACE has been terminated (Docker).")
+                else:
+                    messagebox.showinfo("Error", "No TRACE Docker container found running on the specified port.")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to terminate TRACE (Docker): {e}")
+        else:
+            messagebox.showinfo("Error", "No TRACE process is running.")
+    # For non-Docker mode (Current Shell/Conda)
+    else:
+        # Try to kill any process running "trace" as main process
         try:
-            command = f"docker ps --filter publish={port} -q"
-            container_id = os.popen(command).read().strip()
-            if container_id:
-                os.system(f"docker stop {container_id}")
-                messagebox.showinfo("Success", "TRACE has been terminated.")
+            sys_platform = platform.system()
+            success = False
+            if sys_platform == "Windows":
+                # Use tasklist & taskkill, as in prompt
+                # Batch command to kill processes named trace*
+                cmd = r'for /f "tokens=1,*" %A in (\'tasklist ^| findstr /i "^trace"\') do taskkill /IM %A /F'
+                exitcode = os.system(cmd)
+                success = exitcode == 0
+            elif sys_platform == "Darwin":
+                # MacOS
+                exitcode = os.system("pkill -f '^trace'")
+                # pkill returns 0 if matches, 1 if no matches found
+                success = (exitcode == 0)
+            elif sys_platform == "Linux":
+                # Linux: use the same pkill as mac, or try both variants
+                exitcode = os.system("pkill -f '^trace'")
+                success = (exitcode == 0)
             else:
-                messagebox.showinfo("Error", "No TRACE container found running on the specified port.")
+                raise Exception(f"Unsupported platform for TRACE termination: {sys_platform}")
+
+            if success:
+                messagebox.showinfo("Success", f"TRACE has been terminated ({env_mode}).")
+            else:
+                messagebox.showinfo("Error", f"No TRACE process found to terminate in {env_mode} mode.")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to terminate TRACE: {e}")
-    else:
-        messagebox.showinfo("Error", "No TRACE process is running.")
 
 # Initialize global variables
 port = 8888
