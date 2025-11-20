@@ -35,6 +35,23 @@ TRACE is an advanced containerized web application designed for the detailed ana
    pip install git+https://github.com/jlevy44/trace_app
    ```
 
+4. **Using non-standard WSI formats:**
+
+   TRACE only supports the following image formats: [".tif", ".tiff", ".ome.tif", ".ome.tiff", ".dng", ".zif", ".stk", ".lsm", ".sgi", ".rgb", ".rgba", ".bw", ".img", ".oif", ".oib", ".sis", ".gel", ".svs", ".scn", ".bif", ".qptiff", ".qpi", ".pki", ".ndpi", ".avs"]. To load other formats (e.g., .lof) you will need to convert the image to ome.tiff format. 
+   
+   First, install bftools into your trace conda environment:
+   ```bash
+   conda activate trace
+   conda install ome::bftools
+   ```
+
+   Then, run bfconvert to create the ome.tiff file:
+   ```bash
+   set BF_MAX_MEMORY=12g # Windows
+   export BF_MAX_MEMORY=12g # Mac/Linux
+   bfconvert -tilex 2048 -tiley 2048 /original_path/image_file.lof /new_path/image_file.ome.tif
+   ```
+
 ### Running the Desktop Application
 
 - **Using the Desktop App:**
@@ -63,6 +80,7 @@ TRACE is an advanced containerized web application designed for the detailed ana
   You can also run TRACE directly with a specified port:
 
   ```bash
+  cd /project_dir/ 
   trace --port {PORT}
   ```
 
@@ -83,6 +101,11 @@ If Docker is installed, you can run the application using Docker:
    ```bash
    wget https://raw.githubusercontent.com/jlevy44/trace_app/main/trace_app/run_trace_desktop_app.py
    python run_trace_desktop_app.py
+   ```
+
+   Alternatively you can use the launcher provided by the Python installation:
+   ```bash
+   trace_desktop_app
    ```
 
    This will automatically handle Docker operations.

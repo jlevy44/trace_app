@@ -157,6 +157,18 @@ def run_application():
                 bufsize=1,
                 universal_newlines=True  # so we get strings not bytes
             )
+
+            url = f"http://127.0.0.1:{port}/"
+            root.clipboard_clear()
+            root.clipboard_append(url)
+            root.update()
+            messagebox.showinfo("Success", f"TRACE running on {url} (copied to clipboard)")
+            
+            # Open the default browser with the URL
+            import webbrowser
+            time.sleep(3)
+            webbrowser.open(url)
+
             print("STDOUT:")
             while True:
                 stdout_line = process.stdout.readline()
@@ -175,17 +187,7 @@ def run_application():
             process.stderr.close()
             process.wait()
         
-        time.sleep(5)
-        url = f"http://127.0.0.1:{port}/"
-        root.clipboard_clear()
-        root.clipboard_append(url)
-        root.update()
-        messagebox.showinfo("Success", f"TRACE running on {url} (copied to clipboard)")
         
-        # Open the default browser with the URL
-        import webbrowser
-        time.sleep(1)
-        webbrowser.open(url)
         
     except Exception as e:
         messagebox.showerror("Error", f"Failed to run application: {e}")

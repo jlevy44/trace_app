@@ -114,6 +114,55 @@ def parse_contents(config,filename):
             ])
     return df
 
+def read_thumbnail_openslide(path, scale=0.25):
+    import openslide
+    import numpy as np
+
+    slide = openslide.OpenSlide(path)
+    w, h = slide.dimensions
+
+    tw = max(1, int(w * scale))
+    th = max(1, int(h * scale))
+
+    thumb = slide.get_thumbnail((tw, th))
+    return (w, h), np.array(thumb)
+
+
+def read_thumbnail_pyvips(path, scale=0.25):
+    import pyvips
+    import numpy as np
+    import os
+
+    # Memory safety settings
+    os.environ.setdefault("VIPS_CONCURRENCY", "1")
+    os.environ.setdefault("VIPS_DISC_THRESHOLD", "10m")
+    pyvips.cache_set_max_mem(200 * 1024 * 1024)
+
+    hdr = pyvips.Image.new_from_file(path, access="sequential")
+    w, h = hdr.width, hdr.height
+
+    tw = max(1, int(w * scale))
+    im = pyvips.Image.thumbnail(path, tw)
+    return (w, h), im.numpy()
+
+
+def read_thumbnail_lowmem(path, filename):
+    ext = os.path.splitext(filename)[1].lower()
+
+    # Formats pyvips can handle well
+    pyvips_exts = {'.svs', '.tif', '.tiff'}
+
+    if ext in pyvips_exts:
+        # Try pyvips first (faster & lower memory)
+        try:
+            return read_thumbnail_pyvips(path)
+        except Exception:
+            # fallback to OpenSlide
+            return read_thumbnail_openslide(path)
+
+    # All other formats → OpenSlide
+    return read_thumbnail_openslide(path)
+
 # @pysnooper.snoop()
 def upload_contents(config,filename, project_name):
     print('start function')
@@ -130,22 +179,7 @@ def upload_contents(config,filename, project_name):
             if ext_lower in ['.svs', '.tif', '.tiff']:
                 os.environ.setdefault("VIPS_CONCURRENCY", "1")       # lower peak RAM
                 os.environ.setdefault("VIPS_DISC_THRESHOLD", "10m")  # spill to disk sooner
-                import pyvips
-
-                pyvips.cache_set_max_mem(200 * 1024 * 1024)
-                hdr = pyvips.Image.new_from_file(os_path, access="sequential")
-                im_width, im_height = hdr.width, hdr.height
-                thumb_width = max(1, int(0.25 * im_width))
-                im = pyvips.Image.thumbnail(os_path, thumb_width)
-                image = im.numpy()
-            else:
-                import openslide
-                s = openslide.OpenSlide(os_path)
-                im_width, im_height = s.dimensions
-                thumb_width = max(1, int(0.25 * im_width))
-                thumb_height = max(1, int(0.25 * im_height))
-                thumb = s.get_thumbnail((thumb_width, thumb_height))
-                image = np.array(thumb)
+                (im_width, im_height), image = read_thumbnail_lowmem(os_path, filename)
         com_1 = image.shape[0]/1500
         com_2 = image.shape[1]/1500
         compressed_image = cv2.resize(image,None,fx=1/max(com_1, com_2),fy=1/max(com_1, com_2))
