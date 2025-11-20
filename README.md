@@ -49,8 +49,10 @@ TRACE is an advanced containerized web application designed for the detailed ana
    ```bash
    set BF_MAX_MEMORY=12g # Windows
    export BF_MAX_MEMORY=12g # Mac/Linux
-   bfconvert -tilex 2048 -tiley 2048 -map rgb -bigtiff /original_path/image_file.lof /new_path/image_file.tiff
+   bfconvert -tilex 2048 -tiley 2048 -bigtiff /original_path/image_file.lof /new_path/image_file.tiff
    ```
+
+   Alternatively, in QuPath, select in the Menu Bar: File -> Export images... -> OME TIFF.
 
 ### Running the Desktop Application
 
