@@ -147,6 +147,8 @@ def run_application():
         # Real-time flush of subprocess output
         print_result = True
         if print_result:
+            import threading
+
             print("=== TRACE Command Output ===")
             process = subprocess.Popen(
                 command,
@@ -163,29 +165,32 @@ def run_application():
             root.clipboard_append(url)
             root.update()
             messagebox.showinfo("Success", f"TRACE running on {url} (copied to clipboard)")
-            
+
             # Open the default browser with the URL
             import webbrowser
             time.sleep(3)
             webbrowser.open(url)
 
-            print("STDOUT:")
-            while True:
-                stdout_line = process.stdout.readline()
-                if stdout_line == '' and process.poll() is not None:
-                    break
-                if stdout_line:
-                    print(stdout_line, end='', flush=True)
-            print("STDERR:")
-            # Drain remaining STDOUT (if any) and flush
-            for remaining_line in process.stdout:
-                print(remaining_line, end='', flush=True)
-            for stderr_line in process.stderr:
-                print(stderr_line, end='', flush=True)
-            print("===========================")
-            process.stdout.close()
-            process.stderr.close()
+            def stream_output(stream, label):
+                print(label)
+                for line in iter(stream.readline, ''):
+                    if line:
+                        print(line, end='', flush=True)
+                stream.close()
+
+            # Use threads to avoid blocking on .readline()
+            stdout_thread = threading.Thread(target=stream_output, args=(process.stdout, "STDOUT:"))
+            stderr_thread = threading.Thread(target=stream_output, args=(process.stderr, "STDERR:"))
+
+            stdout_thread.start()
+            stderr_thread.start()
+
+            # Wait for the process to finish, then wait for output threads
             process.wait()
+            stdout_thread.join()
+            stderr_thread.join()
+
+            print("===========================")
         
         
         
@@ -265,6 +270,7 @@ port_entry = tk.Entry(root)
 port_entry.grid(row=3, column=1, padx=10, pady=10, sticky="w")
 port_entry.insert(0, "8888")
 port_entry.bind("<FocusOut>", lambda event: update_port())
+port_entry.bind("<Return>", lambda event: update_port())
 
 # Create and place the label and text box for setting the conda environment (shown only if "Conda" is selected)
 conda_env_label = tk.Label(root, text="Conda Env:")
