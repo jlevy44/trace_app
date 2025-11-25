@@ -247,25 +247,30 @@ def upload_contents(config,filename, project_name):
         if config.LOW_MEMORY:
             com_1,com_2 = im_height/1500,im_width/1500
 
-        if not os.path.exists('compression_value_dict.json'):
-            if os.path.splitext(filename)[1] in config.file_extensions:
-                compression_value_dict = {project_name+filename: 1/max(com_1, com_2),
-                                          project_name+os.path.splitext(filename)[0]+'.tiff': 1/max(com_1, com_2),
-                                          project_name+os.path.splitext(filename)[0]+'.svs': 1/max(com_1, com_2)}
-            with open('compression_value_dict.json', 'w') as json_file:
-                json.dump(compression_value_dict, json_file)
-        else:
-            with open('compression_value_dict.json', 'r') as json_file:
+        # Consolidated creation/update of compression_value_dict.json
+        compression_file = 'compression_value_dict.json'
+        key_exts = [
+            filename,
+            os.path.splitext(filename)[0] + '.tiff',
+            os.path.splitext(filename)[0] + '.svs'
+        ]
+        compression_keys = [project_name + ext for ext in key_exts]
+        compression_value = 1 / max(com_1, com_2)
+
+        if os.path.exists(compression_file):
+            with open(compression_file, 'r') as json_file:
                 compression_value_dict = json.load(json_file)
-            if os.path.splitext(filename)[1] in config.file_extensions:
-                compression_value_dict.update({project_name+filename: 1/max(com_1, com_2),
-                                          project_name+os.path.splitext(filename)[0]+'.tiff': 1/max(com_1, com_2),
-                                          project_name+os.path.splitext(filename)[0]+'.svs': 1/max(com_1, com_2)})
-            with open('compression_value_dict.json', 'w') as json_file:
+        else:
+            compression_value_dict = {}
+
+        if os.path.splitext(filename)[1] in config.file_extensions:
+            for key in compression_keys:
+                compression_value_dict[key] = compression_value
+            compression_value_dict[f"{os.path.splitext(filename)[0]}_im_width"] = im_width
+            compression_value_dict[f"{os.path.splitext(filename)[0]}_im_height"] = im_height
+            with open(compression_file, 'w') as json_file:
                 json.dump(compression_value_dict, json_file)
-        # os.system("touch "+os.path.join(config.workdir_data_path,f"{project_name}/"+os.path.splitext(filename)[0]+'.tiff'))
-        with open(os.path.join(config.workdir_data_path,f"{project_name}/"+os.path.splitext(filename)[0]+'.tiff'), "w") as f:
-            pass
+        with open(os.path.join(config.workdir_data_path,f"{project_name}/"+os.path.splitext(filename)[0]+'.tiff'), "w") as f: pass
         tiff.imwrite(os.path.join(config.workdir_data_path,f"{project_name}/"+os.path.splitext(filename)[0]+'_small.tiff'), compressed_image, photometric='rgb')
     elif '.pkl' in filename:
         with open(config.files_to_upload_path+filename, "rb") as file:
