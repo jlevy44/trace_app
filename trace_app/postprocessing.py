@@ -54,7 +54,8 @@ class Postprocessing:
 
         exported_metals_annots_ = pd.read_pickle(exported_metals_annots_path)
         is_unwarped = exported_metals_annots_.get('unwarped', False)
-
+        if not is_unwarped:
+            assert os.path.basename(exported_metals_annots_path).endswith("exported_metals_annots.pkl") or os.path.basename(exported_metals_annots_path).endswith("coregistered_metals.pkl"), "Exported metals annots path must be a exported_metals_annots.pkl or coregistered_metals.pkl file"
         tissue_mask=~np.isnan(exported_metals_annots_['metals']['All'])
         elements=list(exported_metals_annots_['metals'].keys())
         elemental_dict={element:exported_metals_annots_['metals'][element][tissue_mask] for element in elements}
@@ -106,5 +107,7 @@ class Postprocessing:
             export_pointcloud_df_path = os.path.join(os.path.dirname(exported_metals_annots_path), "pointcloud_df_wsi_coords.pkl")
         pointcloud_df.to_pickle(export_pointcloud_df_path)
 
+def main(): fire.Fire(Postprocessing)
+
 if __name__ == "__main__":
-    fire.Fire(Postprocessing)
+    main()

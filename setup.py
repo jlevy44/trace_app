@@ -15,6 +15,7 @@ setup(
         'console_scripts': [
             'trace=trace_app.trace_app:main',
             'trace_desktop_app=trace_app.run_trace_desktop_app:main',
+            'trace_postprocessing=trace_app.postprocessing:main',
         ],
     },
     long_description=long_description,
