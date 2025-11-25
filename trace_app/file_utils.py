@@ -46,8 +46,10 @@ def generate_files_df_records(config, old_selected_rows=[]):
                 file_type = "Preprocessed Metals"
             elif file_basename == "coregistered_metals.pkl":
                 file_type = "Coregistered Metals"
-            elif file_basename == "exported_metals_annots.pkl":
+            elif file_basename.endswith("exported_metals_annots.pkl"):
                 file_type = "Exported Metals"
+            elif file_basename.endswith("pointcloud_df_wsi_coords.pkl"):
+                file_type = "Pointcloud WSI Coords"
             elif file_extension == ".pkl":
                 file_type = 'Metals'
             elif file_extension == ".zarr":

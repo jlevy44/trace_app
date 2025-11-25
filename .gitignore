@@ -4,3 +4,4 @@ dist/TRACE.app/
 dist/TRACE
 /TRACE.egg-info
 .DS_Store
+deprecated/2_troubleshoot_postprocessing.ipynb
