@@ -4,7 +4,7 @@ class Postprocessing:
     def __init__(self):
         pass
 
-    def transfer_back_coordinates(self, exported_metals_annots_pkl_path="", preprocessed_metals_pkl_path="", export_unwarped_metals_path="", export_unwarped_metals_annots_path=""):
+    def transfer_back_coordinates(self, exported_metals_annots_pkl_path="", preprocessed_metals_pkl_path="", export_unwarped_metals_annots_path=""):
         import pandas as pd
         from trace_app.data_processing import path_to_mask
         import numpy as np
