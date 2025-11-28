@@ -43,3 +43,4 @@ python-calamine
 # Debugging
 pysnooper
 psutil
+fire
