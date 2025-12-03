@@ -9,13 +9,18 @@ class Postprocessing:
         from trace_app.data_processing import path_to_mask
         import numpy as np
         from collections import defaultdict
+        from functools import reduce
 
         exported_metals_annots = pd.read_pickle(exported_metals_annots_pkl_path)
         preprocessed_metals = pd.read_pickle(preprocessed_metals_pkl_path)
 
         unwarped_exported_metals_annots = exported_metals_annots.copy()
         unwarped_exported_metals_annots['original_warped_shape']=exported_metals_annots['metals']['All'].shape
-        H = exported_metals_annots['homo']
+        H = exported_metals_annots.get('previous_homo', [exported_metals_annots['homo']])
+        if len(H) == 1:
+            H = H[0]
+        else:
+            H = reduce(np.matmul, H[::-1])
         H/=H[2,2]
         H_inv = np.linalg.inv(H)
         H_inv/=H_inv[2,2]
