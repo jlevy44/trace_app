@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 from dash import dash_table
 import matplotlib.pyplot as plt
 from dash_canvas.utils import array_to_data_url
-from .image_processing import output_blank_hne
+from .image_processing import output_blank_wsi
 from .file_utils import return_upload_files, generate_files_df_records
 
 class Config:
@@ -37,7 +37,7 @@ scale_factor_annotation = 0.3
 
 compression_value_again = 0
 
-last_clickData_hne = {}
+last_clickData_wsi = {}
 
 last_select_tiff_file = ''
 last_select_pkl_file = ''
@@ -93,18 +93,18 @@ for one_file in all_files_list:
 
 xy_index = []
 
-co_hne_x_list = []
-co_hne_y_list = []
+co_wsi_x_list = []
+co_wsi_y_list = []
 
-fig_hne_co = px.imshow(im_small_crop_annotation_tab)
-fig_hne_co.add_scatter(
+fig_wsi_co = px.imshow(im_small_crop_annotation_tab)
+fig_wsi_co.add_scatter(
     x=[],
     y=[],
     mode='markers',
     marker_color='black',
     marker_size=5,
 )
-fig_hne_co.update_layout(
+fig_wsi_co.update_layout(
     template='plotly_dark',
     plot_bgcolor='rgba(0, 0, 0, 0)',
     paper_bgcolor='rgba(0, 0, 0, 0)',
@@ -117,9 +117,9 @@ fig_hne_co.update_layout(
         'b': 0,
     }
 )
-fig_hne_co.update_xaxes(visible=False,)
-fig_hne_co.update_yaxes(visible=False,)
-fig_hne_co.update_coloraxes(showscale=False)
+fig_wsi_co.update_xaxes(visible=False,)
+fig_wsi_co.update_yaxes(visible=False,)
+fig_wsi_co.update_coloraxes(showscale=False)
 
 co_metal_x_list = []
 co_metal_y_list = []
@@ -171,7 +171,7 @@ fig_metal_co.update_coloraxes(showscale=False)
 
 
 original_df_co = pd.DataFrame({'index': xy_index, 
-                               'hne x': co_hne_x_list, 'hne y': co_hne_y_list, 
+                               'wsi x': co_wsi_x_list, 'wsi y': co_wsi_y_list, 
                             'metals x': co_metal_x_list, 'metals y': co_metal_y_list, })
 
 files_df = pd.DataFrame({'Project': project_df_list, 
@@ -247,7 +247,7 @@ except:
     pass
 
 
-blank_figure_hne = output_blank_hne(im_small_crop_annotation_tab)
+blank_figure_wsi = output_blank_wsi(im_small_crop_annotation_tab)
 
 padded_rows = 1000
 padded_columns = 1600
@@ -356,10 +356,10 @@ config.all_color_list = all_color_list
 config.all_relayout_data = all_relayout_data
 config.im_small_crop_annotation_tab = im_small_crop_annotation_tab
 config.im_small_crop_co = im_small_crop_co
-config.hne_shape = None
+config.wsi_shape = None
 config.blank_figure = blank_figure
-config.blank_figure_hne = blank_figure_hne
-config.fig_hne_co = fig_hne_co
+config.blank_figure_wsi = blank_figure_wsi
+config.fig_wsi_co = fig_wsi_co
 config.fig_metal_co = fig_metal_co
 config.white_fig_co = white_fig_co
 
@@ -389,7 +389,7 @@ config.history_vmin = history_vmin
 config.history_vmax = history_vmax
 config.history_co_transport_n_clicks = history_co_transport_n_clicks
 config.n_clicks_load_data = 0
-config.last_clickData_hne = last_clickData_hne
+config.last_clickData_wsi = last_clickData_wsi
 
 # Settings
 config.LOW_MEMORY = LOW_MEMORY

@@ -90,7 +90,7 @@ def add_image_to_figure(fig, img, as_uint8=False):
     )
     return fig
 
-def output_blank_hne(im_small_crop_annotation_tab):
+def output_blank_wsi(im_small_crop_annotation_tab):
     fig = setup_base_figure()
     fig = add_image_to_figure(fig, im_small_crop_annotation_tab)
     fig = add_click_grid(fig, im_small_crop_annotation_tab.shape[:2])
@@ -451,7 +451,7 @@ def change_two_images_and_clean_point_table(config, n_clicks, selected_rows, fil
                     file_path = f"{os.path.splitext(file_path)[0]}_small.tiff"
                 config.im_small_crop_annotation_tab = tiff.imread(file_path)
                 config.im_small_crop_co = tiff.imread(file_path)
-                config.hne_shape = config.im_small_crop_co.shape
+                config.wsi_shape = config.im_small_crop_co.shape
                 select_tiff_file = file_name
             else:
                 with open(file_path, "rb") as input_file:
@@ -463,19 +463,19 @@ def change_two_images_and_clean_point_table(config, n_clicks, selected_rows, fil
     if config.select_pkl_file != config.last_select_pkl_file or select_tiff_file != config.last_select_tiff_file:
         if select_tiff_file != config.last_select_tiff_file and config.metal_data:
             x_metal, y_metal = config.metal_data['metals']['All'].shape
-            x_hne, y_hne = config.im_small_crop_co.shape[:2]
-            compression_value = (max(x_hne, y_hne) / max(x_metal, y_metal) + min(x_hne, y_hne) / min(x_metal, y_metal)) / 2
+            x_wsi, y_wsi = config.im_small_crop_co.shape[:2]
+            compression_value = (max(x_wsi, y_wsi) / max(x_metal, y_metal) + min(x_wsi, y_wsi) / min(x_metal, y_metal)) / 2
             config.compression_value_again = 1 / compression_value
             config.im_small_crop_co = cv2.resize(config.im_small_crop_co, None, fx=1/compression_value, fy=1/compression_value)
             config.im_small_crop_annotation_tab = cv2.resize(config.im_small_crop_annotation_tab, None, fx=1/compression_value, fy=1/compression_value)
-            config.hne_shape = config.im_small_crop_co.shape
+            config.wsi_shape = config.im_small_crop_co.shape
 
         selected_metal = list(config.metal_data['metals'].keys())[0]
         all_metals_list = list(config.metal_data['metals'].keys())
         colormap = 'jet'
         vmin_vmax = [0, 100]
 
-        update_df = pd.DataFrame({'index': [], 'hne x': [], 'hne y': [], 'metals x': [], 'metals y': []})
+        update_df = pd.DataFrame({'index': [], 'wsi x': [], 'wsi y': [], 'metals x': [], 'metals y': []})
         xy_coords_table = dash_table.DataTable(
             id='datatable_coord_co',
             columns=[{"name": i, "id": i} for i in update_df.columns],
@@ -526,11 +526,11 @@ def change_two_images_and_clean_point_table(config, n_clicks, selected_rows, fil
             showlegend=False,
         )
 
-        blank_hne_image = setup_base_figure(add_clickmode=True)
-        blank_hne_image = add_image_to_figure(blank_hne_image, config.im_small_crop_annotation_tab)
-        blank_hne_image = add_click_grid(blank_hne_image, config.im_small_crop_annotation_tab.shape[:2])
+        blank_wsi_image = setup_base_figure(add_clickmode=True)
+        blank_wsi_image = add_image_to_figure(blank_wsi_image, config.im_small_crop_annotation_tab)
+        blank_wsi_image = add_click_grid(blank_wsi_image, config.im_small_crop_annotation_tab.shape[:2])
 
-        blank_hne_image.update_layout(
+        blank_wsi_image.update_layout(
             autosize=True,
             margin={"l": 0, "r": 0, "t": 0, "b": 0},
             paper_bgcolor='rgba(0,0,0,0)',
@@ -543,7 +543,7 @@ def change_two_images_and_clean_point_table(config, n_clicks, selected_rows, fil
         #     'dragmode': None #'drawclosedpath',
         # }
         # blank_figure['layout'].update(config.all_relayout_data)
-        # blank_hne_image['layout'].update(config.all_relayout_data)
+        # blank_wsi_image['layout'].update(config.all_relayout_data)
 
         all_metals = np.sum([config.metal_data['metals'][metal] for metal in config.metal_data['metals']], axis=0)
         padded_all_metals = np.maximum(np.log1p(all_metals), 0.000001)
@@ -580,11 +580,11 @@ def change_two_images_and_clean_point_table(config, n_clicks, selected_rows, fil
             margin={"l": 0, "r": 0, "t": 0, "b": 0},
         )
 
-        fig_hne_co = setup_base_figure(config.im_small_crop_annotation_tab, add_clickmode=True)
-        fig_hne_co = add_click_grid(fig_hne_co, config.im_small_crop_annotation_tab.shape[:2])
-        # fig_hne_co = add_image_to_figure(fig_hne_co, config.im_small_crop_annotation_tab)
+        fig_wsi_co = setup_base_figure(config.im_small_crop_annotation_tab, add_clickmode=True)
+        fig_wsi_co = add_click_grid(fig_wsi_co, config.im_small_crop_annotation_tab.shape[:2])
+        # fig_wsi_co = add_image_to_figure(fig_wsi_co, config.im_small_crop_annotation_tab)
 
-        fig_hne_co.update_layout(
+        fig_wsi_co.update_layout(
             autosize=True,
             margin={"l": 0, "r": 0, "t": 0, "b": 0},
             paper_bgcolor='rgba(0,0,0,0)',
@@ -594,15 +594,15 @@ def change_two_images_and_clean_point_table(config, n_clicks, selected_rows, fil
 
         config.file_name_history_2 = ''
         
-        return [], white_fig_co, xy_coords_table, list(config.metal_data['metals'].keys()), selected_metal, blank_figure, blank_hne_image, fig_hne_co, selected_metal, all_metals_list, colormap, vmin_vmax, [selected_metal], all_metals_list, colormap, vmin_vmax, ['All'], ['All']+all_metals_list, colormap, vmin_vmax, blank_figure_pre, blank_figure_pre_right, selected_metal, list(config.metal_data['metals'].keys()), 0, 0, 0
+        return [], white_fig_co, xy_coords_table, list(config.metal_data['metals'].keys()), selected_metal, blank_figure, blank_wsi_image, fig_wsi_co, selected_metal, all_metals_list, colormap, vmin_vmax, [selected_metal], all_metals_list, colormap, vmin_vmax, ['All'], ['All']+all_metals_list, colormap, vmin_vmax, blank_figure_pre, blank_figure_pre_right, selected_metal, list(config.metal_data['metals'].keys()), 0, 0, 0
 
 def update_back_to_image(config, table_data, metal_colormap_co, metal_dropdown_co, vmin_vmax_input_co, threshold):
     vmin, vmax = vmin_vmax_input_co[0], vmin_vmax_input_co[1]
     
     if len(table_data) == 0:
-        fig_hne_co = setup_base_figure(config.im_small_crop_annotation_tab, add_clickmode=True)
-        # fig_hne_co = add_image_to_figure(fig_hne_co, config.im_small_crop_annotation_tab)
-        fig_hne_co = add_click_grid(fig_hne_co, config.im_small_crop_annotation_tab.shape[:2])
+        fig_wsi_co = setup_base_figure(config.im_small_crop_annotation_tab, add_clickmode=True)
+        # fig_wsi_co = add_image_to_figure(fig_wsi_co, config.im_small_crop_annotation_tab)
+        fig_wsi_co = add_click_grid(fig_wsi_co, config.im_small_crop_annotation_tab.shape[:2])
         
         padded_rows_co = 1000
         padded_columns_co = 1600
@@ -658,42 +658,42 @@ def update_back_to_image(config, table_data, metal_colormap_co, metal_dropdown_c
         )
     else:
         index_list = []
-        hne_x = []
-        hne_y = []
+        wsi_x = []
+        wsi_y = []
         metal_x = []
         metal_y = []
         
         index_count = 1
         for one_dict in table_data:
             index_list.append(index_count)
-            hne_x.append(one_dict['hne x'])
-            hne_y.append(one_dict['hne y'])
+            wsi_x.append(one_dict['wsi x'])
+            wsi_y.append(one_dict['wsi y'])
             metal_x.append(one_dict['metals x'])
             metal_y.append(one_dict['metals y'])
             index_count += 1 
 
-        index_list_to_hne_image = []
-        x_list_to_hne_image = []
-        y_list_to_hne_image = []
+        index_list_to_wsi_image = []
+        x_list_to_wsi_image = []
+        y_list_to_wsi_image = []
         index_list_to_metal_image = []
         x_list_to_metal_image = []
         y_list_to_metal_image = []
         for one_row_index in range(len(index_list)):
-            if hne_x[one_row_index] != '-' and hne_y[one_row_index] != '-':
-                index_list_to_hne_image.append(index_list[one_row_index])
-                x_list_to_hne_image.append(hne_x[one_row_index])
-                y_list_to_hne_image.append(hne_y[one_row_index])
+            if wsi_x[one_row_index] != '-' and wsi_y[one_row_index] != '-':
+                index_list_to_wsi_image.append(index_list[one_row_index])
+                x_list_to_wsi_image.append(wsi_x[one_row_index])
+                y_list_to_wsi_image.append(wsi_y[one_row_index])
             if metal_x[one_row_index] != '-' and metal_y[one_row_index] != '-':
                 index_list_to_metal_image.append(index_list[one_row_index])
                 x_list_to_metal_image.append(metal_x[one_row_index])
                 y_list_to_metal_image.append(metal_y[one_row_index])
         
-        fig_hne_co = setup_base_figure(config.im_small_crop_annotation_tab, add_clickmode=True)
-        # fig_hne_co = add_image_to_figure(fig_hne_co, config.im_small_crop_annotation_tab)
-        fig_hne_co = add_click_grid(fig_hne_co, config.im_small_crop_annotation_tab.shape[:2])
-        fig_hne_co = add_points_trace(fig_hne_co, x_list_to_hne_image, y_list_to_hne_image, index_list_to_hne_image)
+        fig_wsi_co = setup_base_figure(config.im_small_crop_annotation_tab, add_clickmode=True)
+        # fig_wsi_co = add_image_to_figure(fig_wsi_co, config.im_small_crop_annotation_tab)
+        fig_wsi_co = add_click_grid(fig_wsi_co, config.im_small_crop_annotation_tab.shape[:2])
+        fig_wsi_co = add_points_trace(fig_wsi_co, x_list_to_wsi_image, y_list_to_wsi_image, index_list_to_wsi_image)
 
-        fig_hne_co.update_layout(
+        fig_wsi_co.update_layout(
             autosize=True,
             margin={"l": 0, "r": 0, "t": 0, "b": 0},
             paper_bgcolor='rgba(0,0,0,0)',
@@ -756,18 +756,18 @@ def update_back_to_image(config, table_data, metal_colormap_co, metal_dropdown_c
             # dragmode='select',
             # clickmode='event+select'
         )
-        fig_hne_co['data'][1].update(x=x_list_to_hne_image)
-        fig_hne_co['data'][1].update(y=y_list_to_hne_image)
-        fig_hne_co['data'][1].update(text=index_list_to_hne_image)
+        fig_wsi_co['data'][1].update(x=x_list_to_wsi_image)
+        fig_wsi_co['data'][1].update(y=y_list_to_wsi_image)
+        fig_wsi_co['data'][1].update(text=index_list_to_wsi_image)
         fig_metal_co['data'][1].update(x=x_list_to_metal_image)
         fig_metal_co['data'][1].update(y=y_list_to_metal_image)
         fig_metal_co['data'][1].update(text=index_list_to_metal_image)
-    return fig_hne_co, fig_metal_co
+    return fig_wsi_co, fig_metal_co
 
-def update_two_image_and_table(config, clickData_hne, clickData_metal, table_data):
-    if (not clickData_hne) and (not clickData_metal):
+def update_two_image_and_table(config, clickData_wsi, clickData_metal, table_data):
+    if (not clickData_wsi) and (not clickData_metal):
         update_df = pd.DataFrame({'index': [], 
-                           'hne x': [], 'hne y': [], 
+                           'wsi x': [], 'wsi y': [], 
                         'metals x': [], 'metals y': [], })
         xy_coords_table = dash_table.DataTable(
                                         id='datatable_coord_co',
@@ -779,47 +779,47 @@ def update_two_image_and_table(config, clickData_hne, clickData_metal, table_dat
         return xy_coords_table
     
     index_list = []
-    hne_x = []
-    hne_y = []
+    wsi_x = []
+    wsi_y = []
     metal_x = []
     metal_y = []
     index_count = 1
     
     for one_dict in table_data:
         index_list.append(index_count)
-        hne_x.append(one_dict['hne x'])
-        hne_y.append(one_dict['hne y'])
+        wsi_x.append(one_dict['wsi x'])
+        wsi_y.append(one_dict['wsi y'])
         metal_x.append(one_dict['metals x'])
         metal_y.append(one_dict['metals y'])
         index_count += 1
-    if clickData_hne and clickData_hne != config.last_clickData_hne:
-        config.last_clickData_hne = clickData_hne
-        points = clickData_hne.get('points')[0]
-        x_hne_point = points.get('x')
-        y_hne_point = points.get('y')
+    if clickData_wsi and clickData_wsi != config.last_clickData_wsi:
+        config.last_clickData_wsi = clickData_wsi
+        points = clickData_wsi.get('points')[0]
+        x_wsi_point = points.get('x')
+        y_wsi_point = points.get('y')
         
-        hne_point_exist = 0
+        wsi_point_exist = 0
         for one_dict in table_data:
-            if (one_dict['hne x'] == x_hne_point) and (one_dict['hne y'] == y_hne_point):
-                hne_point_exist = 1
-        if hne_point_exist == 0:
-            if ('-' in hne_x) or ('-' in hne_y):
+            if (one_dict['wsi x'] == x_wsi_point) and (one_dict['wsi y'] == y_wsi_point):
+                wsi_point_exist = 1
+        if wsi_point_exist == 0:
+            if ('-' in wsi_x) or ('-' in wsi_y):
                 for one_index in range(len(index_list)):
-                    if hne_x[one_index] == '-' or hne_y[one_index] == '-':
-                        hne_x[one_index] = x_hne_point
-                        hne_y[one_index] = y_hne_point
+                    if wsi_x[one_index] == '-' or wsi_y[one_index] == '-':
+                        wsi_x[one_index] = x_wsi_point
+                        wsi_y[one_index] = y_wsi_point
                         break
             else:
                 if len(index_list) == 0:
                     index_list.append(1)
                 else:
                     index_list.append(index_list[-1]+1)
-                hne_x.append(x_hne_point)
-                hne_y.append(y_hne_point)
+                wsi_x.append(x_wsi_point)
+                wsi_y.append(y_wsi_point)
                 metal_x.append('-')
                 metal_y.append('-')
             update_df = pd.DataFrame({'index': index_list, 
-                           'hne x': hne_x, 'hne y': hne_y, 
+                           'wsi x': wsi_x, 'wsi y': wsi_y, 
                         'metals x': metal_x, 'metals y': metal_y, })
             xy_coords_table = dash_table.DataTable(
                                             id='datatable_coord_co',
@@ -851,13 +851,13 @@ def update_two_image_and_table(config, clickData_hne, clickData_metal, table_dat
                         index_list.append(1)
                     else:
                         index_list.append(index_list[-1]+1)
-                    hne_x.append('-')
-                    hne_y.append('-')
+                    wsi_x.append('-')
+                    wsi_y.append('-')
                     metal_x.append(x_metal_point)
                     metal_y.append(y_metal_point)
 
                 update_df = pd.DataFrame({'index': index_list, 
-                               'hne x': hne_x, 'hne y': hne_y, 
+                               'wsi x': wsi_x, 'wsi y': wsi_y, 
                             'metals x': metal_x, 'metals y': metal_y, })
                 xy_coords_table = dash_table.DataTable(
                                                 id='datatable_coord_co',
@@ -869,7 +869,7 @@ def update_two_image_and_table(config, clickData_hne, clickData_metal, table_dat
                 return xy_coords_table
             else:
                 update_df = pd.DataFrame({'index': index_list, 
-                               'hne x': hne_x, 'hne y': hne_y, 
+                               'wsi x': wsi_x, 'wsi y': wsi_y, 
                             'metals x': metal_x, 'metals y': metal_y, })
                 xy_coords_table = dash_table.DataTable(
                                                 id='datatable_coord_co',
@@ -901,13 +901,13 @@ def update_two_image_and_table(config, clickData_hne, clickData_metal, table_dat
                     index_list.append(1)
                 else:
                     index_list.append(index_list[-1]+1)
-                hne_x.append('-')
-                hne_y.append('-')
+                wsi_x.append('-')
+                wsi_y.append('-')
                 metal_x.append(x_metal_point)
                 metal_y.append(y_metal_point)
 
             update_df = pd.DataFrame({'index': index_list, 
-                           'hne x': hne_x, 'hne y': hne_y, 
+                           'wsi x': wsi_x, 'wsi y': wsi_y, 
                         'metals x': metal_x, 'metals y': metal_y, })
             xy_coords_table = dash_table.DataTable(
                                             id='datatable_coord_co',
@@ -919,7 +919,7 @@ def update_two_image_and_table(config, clickData_hne, clickData_metal, table_dat
             return xy_coords_table
         else:
             update_df = pd.DataFrame({'index': index_list, 
-                           'hne x': hne_x, 'hne y': hne_y, 
+                           'wsi x': wsi_x, 'wsi y': wsi_y, 
                         'metals x': metal_x, 'metals y': metal_y, })
             xy_coords_table = dash_table.DataTable(
                                             id='datatable_coord_co',
@@ -934,9 +934,9 @@ def show_coregistered_images(config,n_clicks, table_data, old_selected_rows, thr
     if n_clicks > 0:
         slide_x, slide_y, metals_x, metals_y = [], [], [], []
         for one_index in range(len(table_data)):
-            if table_data[one_index]['hne x'] != '-' and table_data[one_index]['hne y'] != '-' and table_data[one_index]['metals x'] != '-' and table_data[one_index]['metals y'] != '-':
-                slide_x.append(table_data[one_index]['hne x'])
-                slide_y.append(table_data[one_index]['hne y'])
+            if table_data[one_index]['wsi x'] != '-' and table_data[one_index]['wsi y'] != '-' and table_data[one_index]['metals x'] != '-' and table_data[one_index]['metals y'] != '-':
+                slide_x.append(table_data[one_index]['wsi x'])
+                slide_y.append(table_data[one_index]['wsi y'])
                 metals_x.append(table_data[one_index]['metals x'])
                 metals_y.append(table_data[one_index]['metals y'])
         
@@ -946,7 +946,7 @@ def show_coregistered_images(config,n_clicks, table_data, old_selected_rows, thr
             df_co['element'].append(one_metal)
         dfs_new_df_co = pd.DataFrame(df_co)
         metals_im_gray=dfs_new_df_co['image'].mean(0)
-        warped_metals_dict = warp_metals_new(slide_x, slide_y, metals_x, metals_y, dfs_new_df_co, metals_im_gray.shape, config.hne_shape)
+        warped_metals_dict = warp_metals_new(slide_x, slide_y, metals_x, metals_y, dfs_new_df_co, metals_im_gray.shape, config.wsi_shape)
         config.warped_metals=warped_metals_dict.pop('warped_metals')
         homo=warped_metals_dict.pop("homo")
         padded_metal_image_co = config.warped_metals['All']
@@ -961,7 +961,7 @@ def show_coregistered_images(config,n_clicks, table_data, old_selected_rows, thr
         replacement_color_to_white_co = np.array([1, 1, 1])
         mask_to_white_co = np.all(padded_metal_image_rgb_co == target_color_to_white_co, axis=-1)
         padded_metal_image_rgb_co[mask_to_white_co] = replacement_color_to_white_co
-        hne_after_coregister = html.Img(src=array_to_data_url(config.im_small_crop_co), style={'width': '50%'})
+        wsi_after_coregister = html.Img(src=array_to_data_url(config.im_small_crop_co), style={'width': '50%'})
         metal_after_coregister = html.Img(src=array_to_data_url((padded_metal_image_rgb_co * 255).astype(np.uint8)), style={'width': '50%'})
 
         im_small_gray = cv2.cvtColor(config.im_small_crop_co[:dfs_new_df_co['image'][0].shape[0], 
@@ -1014,7 +1014,7 @@ def show_coregistered_images(config,n_clicks, table_data, old_selected_rows, thr
                                     row_selectable='multi')
         
 
-        return [hne_after_coregister, metal_after_coregister], [display_files_table]#files_df.to_dict('records')
+        return [wsi_after_coregister, metal_after_coregister], [display_files_table]#files_df.to_dict('records')
     else:
         raise PreventUpdate
 
@@ -1023,9 +1023,9 @@ def show_coregistered_images(config, n_clicks, table_data, old_selected_rows, me
         # Extract coordinates from table data
         slide_x, slide_y, metals_x, metals_y = [], [], [], []
         for one_index in range(len(table_data)):
-            if table_data[one_index]['hne x'] != '-' and table_data[one_index]['hne y'] != '-' and table_data[one_index]['metals x'] != '-' and table_data[one_index]['metals y'] != '-':
-                slide_x.append(table_data[one_index]['hne x'])
-                slide_y.append(table_data[one_index]['hne y'])
+            if table_data[one_index]['wsi x'] != '-' and table_data[one_index]['wsi y'] != '-' and table_data[one_index]['metals x'] != '-' and table_data[one_index]['metals y'] != '-':
+                slide_x.append(table_data[one_index]['wsi x'])
+                slide_y.append(table_data[one_index]['wsi y'])
                 metals_x.append(table_data[one_index]['metals x'])
                 metals_y.append(table_data[one_index]['metals y'])
         
@@ -1038,7 +1038,7 @@ def show_coregistered_images(config, n_clicks, table_data, old_selected_rows, me
         metals_im_gray = dfs_new_df_co['image'].mean(0)
         
         # Warp metals
-        warped_metals_dict = warp_metals_new(slide_x, slide_y, metals_x, metals_y, dfs_new_df_co, metals_im_gray.shape, config.hne_shape)
+        warped_metals_dict = warp_metals_new(slide_x, slide_y, metals_x, metals_y, dfs_new_df_co, metals_im_gray.shape, config.wsi_shape)
         config.warped_metals = warped_metals_dict.pop('warped_metals')
         homo = warped_metals_dict.pop("homo")
 
@@ -1076,7 +1076,7 @@ def show_coregistered_images(config, n_clicks, table_data, old_selected_rows, me
         padded_metal_image_rgb_co = cmap_jet(padded_metal_image_normalized_co)
         padded_metal_image_rgb_co = padded_metal_image_rgb_co[:, :, :3]
         padded_metal_image_rgb_co[nan_mask] = np.array([1,1,1])
-        hne_after_coregister = html.Img(src=array_to_data_url(config.im_small_crop_co), style={'width': '50%'})
+        wsi_after_coregister = html.Img(src=array_to_data_url(config.im_small_crop_co), style={'width': '50%'})
         metal_after_coregister = html.Img(src=array_to_data_url((padded_metal_image_rgb_co * 255).astype(np.uint8)), style={'width': '50%'})
 
         # # Set background to white
@@ -1085,14 +1085,14 @@ def show_coregistered_images(config, n_clicks, table_data, old_selected_rows, me
         # padded_metal_image_rgb_co[mask_to_white_co] = [1, 1, 1]
 
         # # Create figures
-        # fig_hne_co = setup_base_figure(config.im_small_crop_co, add_clickmode=True)
-        # fig_hne_co = add_click_grid(fig_hne_co, config.im_small_crop_co.shape[:2])
+        # fig_wsi_co = setup_base_figure(config.im_small_crop_co, add_clickmode=True)
+        # fig_wsi_co = add_click_grid(fig_wsi_co, config.im_small_crop_co.shape[:2])
         
         # fig_metal_co = setup_base_figure((padded_metal_image_rgb_co * 255).astype(np.uint8), add_clickmode=True)
         # fig_metal_co = add_click_grid(fig_metal_co, padded_metal_image_rgb_co.shape[:2])
 
         # # Update layouts
-        # for fig in [fig_hne_co, fig_metal_co]:
+        # for fig in [fig_wsi_co, fig_metal_co]:
         #     fig.update_layout(
         #         autosize=True,
         #         margin={"l": 0, "r": 0, "t": 0, "b": 0},
@@ -1102,37 +1102,8 @@ def show_coregistered_images(config, n_clicks, table_data, old_selected_rows, me
         #     )
 
         # Save warped metals
-        save_metal_data = {'metals': config.warped_metals, 'homo': homo}
-    
-        project_df_list, file_name_df_list, file_type_list = [], [], []
-        all_files_list_first = os.listdir(config.workdir_data_path)
-        all_files_list = []
-        for one_file in all_files_list_first:
-            if one_file == '.DS_Store':
-                continue
-            else:
-                all_files_list.append(one_file)
-        for one_file in all_files_list:
-            data_files_under_list = os.listdir(os.path.join(config.workdir_data_path, one_file))
-            for one_data in data_files_under_list:
-                if one_data == '.DS_Store':
-                    continue
-                if 'small' in one_data:
-                    continue
-                if os.path.splitext(one_data)[1] in config.file_extensions:
-                    file_type_list.append('WSI')
-                elif os.path.splitext(one_data)[1]==".pkl":
-                    file_type_list.append('Metals')
-                elif os.path.splitext(one_data)[1]==".zarr":
-                    file_type_list.append("Exported Metals")
-                elif os.path.splitext(one_data)[1] in ['.xml',".json",".geojson"]:
-                    file_type_list.append('Annotations')
-                project_df_list.append(one_file)
-                file_name_df_list.append(one_data)
-
-        two_files_name_list = []
-        for one_index in old_selected_rows:
-            two_files_name_list.append(project_df_list[one_index]+file_name_df_list[one_index])
+        save_metal_data = {'metals': config.warped_metals, 'homo': homo, 'previous_homo': config.metal_data.get('previous_homo', [])}
+        save_metal_data['previous_homo'].append(homo)
 
         with open(os.path.join(config.workdir_data_path,f"{config.selected_project}/coregistered_metals.pkl"), 'wb') as fp:
             pickle.dump(save_metal_data, fp)
@@ -1148,6 +1119,6 @@ def show_coregistered_images(config, n_clicks, table_data, old_selected_rows, me
                                     data=files_df,
                                     row_selectable='multi')
 
-        return [hne_after_coregister, metal_after_coregister], [display_files_table]
+        return [wsi_after_coregister, metal_after_coregister], [display_files_table]
     else:
         raise PreventUpdate 

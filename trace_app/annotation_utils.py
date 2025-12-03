@@ -21,7 +21,7 @@ from .file_utils import parse_contents
 from .data_processing import polygon_to_path, path_to_mask
 from .image_processing import setup_base_figure, add_image_to_figure, add_click_grid
 
-def output_blank_hne(im_small_crop_annotation_tab):
+def output_blank_wsi(im_small_crop_annotation_tab):
     fig = setup_base_figure(im_small_crop_annotation_tab, add_clickmode=True)
     fig.update_layout(
         autosize=True,
@@ -205,7 +205,7 @@ def update_annotation_callback(config,
 
     padded_metal_image_rgb = process_metal_image(metal_image, threshold, vmin, vmax, colormap)
     blank_figure = create_figure(padded_metal_image_rgb)
-    blank_hne_image = output_blank_hne(config.im_small_crop_annotation_tab)
+    blank_wsi_image = output_blank_wsi(config.im_small_crop_annotation_tab)
 
     if (selected_metal != config.history_selected_metal or
         colormap != config.history_colormap or
@@ -266,6 +266,6 @@ def update_annotation_callback(config,
         config.all_annot_data.update({"shapes": config.all_relayout_data["shapes"]})
 
     blank_figure['layout'].update(config.all_relayout_data)
-    blank_hne_image['layout'].update(config.all_relayout_data)
-    return blank_figure, blank_hne_image
+    blank_wsi_image['layout'].update(config.all_relayout_data)
+    return blank_figure, blank_wsi_image
 

@@ -384,7 +384,7 @@ table_boxplot_tabs = dbc.Tabs([
     dbc.Tab(boxplot_result_content, label="Boxplot")
 ])
 
-# Annotation HNE Card
+# Annotation wsi Card
 default_type_color_match_list = []
 default_color_to_type_dict = {'#2E91E5': 'immune', '#E15F99': 'tumor'}
 for one_color in list(default_color_to_type_dict.keys()):
@@ -395,14 +395,14 @@ for one_color in list(default_color_to_type_dict.keys()):
     ], style={"display": "flex", "align-items": "center"})
     default_type_color_match_list.append(new_line)
 
-annotation_hne_card = dbc.Card(
+annotation_wsi_card = dbc.Card(
     children=[
         dbc.CardHeader(html.H2("WSI"), style=CARD_HEADER_STYLE),
         dbc.CardBody([
             dbc.Row([
                 dcc.Graph(
-                    id="blank_hne_image",
-                    figure=config.blank_figure_hne,
+                    id="blank_wsi_image",
+                    figure=config.blank_figure_wsi,
                     config={'responsive': True},
                     style={
                         **GRAPH_STYLE,
@@ -430,7 +430,7 @@ annotation_hne_card = dbc.Card(
 
 # Layout components
 # image_annotation_table = dbc.Row([
-#     dbc.Col(annotation_hne_card, xs=12, sm=12, md=4, lg=4),
+#     dbc.Col(annotation_wsi_card, xs=12, sm=12, md=4, lg=4),
 #     dbc.Col(image_annotation_card, xs=12, sm=12, md=5, lg=5),
 #     dbc.Col(table_boxplot_tabs, xs=12, sm=12, md=3, lg=3)
 # ], justify="start", className="g-0")
@@ -439,7 +439,7 @@ tab_Measure_content = dbc.Card([
     dbc.CardHeader(html.H2("Measure"), style=CARD_HEADER_STYLE),
     dbc.CardBody([
         dbc.Row([
-            dbc.Col(annotation_hne_card, width=4),
+            dbc.Col(annotation_wsi_card, width=4),
             dbc.Col(image_annotation_card, width=4),
             dbc.Col([
                 table_boxplot_tabs,
@@ -458,11 +458,11 @@ tab_Measure_content = dbc.Card([
 all_coregister_content = dbc.Container([
     # Images row
     dbc.Row([
-        # Left column with HNE image
+        # Left column with wsi image
         dbc.Col(
             dcc.Graph(
-                id='graph_hne_co',
-                figure=config.fig_hne_co,
+                id='graph_wsi_co',
+                figure=config.fig_wsi_co,
                 config={'displayModeBar': False, 'responsive': True, 'scrollZoom': False, 'doubleClick': 'reset'},
                 style={**GRAPH_STYLE, 'height': '35vh'}
             ),

@@ -98,7 +98,7 @@ def warp_with_nan(element_image, homo, output_w, output_h):
     warped_image[warped_image == unique_value] = np.nan
     return warped_image
 
-def warp_metals_new(slide_x, slide_y, metals_x, metals_y, dfs_new_df_co, metals_shape, hne_shape):
+def warp_metals_new(slide_x, slide_y, metals_x, metals_y, dfs_new_df_co, metals_shape, wsi_shape):
     warped_metals = dict()
     
     # Prepare source and destination points for homography
@@ -114,7 +114,7 @@ def warp_metals_new(slide_x, slide_y, metals_x, metals_y, dfs_new_df_co, metals_
     
     # Compute homography matrix
     homo, status = cv2.findHomography(points_src, points_dst)
-    output_h, output_w = hne_shape[0], hne_shape[1]
+    output_h, output_w = wsi_shape[0], wsi_shape[1]
     
     # Apply the transformation for each element
     for _, (element, element_image) in dfs_new_df_co[['element', 'image']].iterrows():

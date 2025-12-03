@@ -219,8 +219,8 @@ def display_selected_file_(n_clicks, selected_rows):
     Output('boxplot_dropdown', 'options', allow_duplicate=True), 
     Output('boxplot_dropdown', 'value', allow_duplicate=True), 
     Output('annotate_metal_image', 'figure', allow_duplicate=True),
-    Output('blank_hne_image', 'figure', allow_duplicate=True),
-    Output('graph_hne_co', 'figure', allow_duplicate=True),  
+    Output('blank_wsi_image', 'figure', allow_duplicate=True),
+    Output('graph_wsi_co', 'figure', allow_duplicate=True),  
 
     Output('metal_dropdown_annotation', 'value', allow_duplicate=True),
     Output('metal_dropdown_annotation', 'options', allow_duplicate=True),
@@ -280,7 +280,7 @@ def add_annotation_type_(n_clicks,
 
 @app.callback(
     Output('annotate_metal_image', 'figure'),
-    Output('blank_hne_image', 'figure'),
+    Output('blank_wsi_image', 'figure'),
     Input('metal_dropdown_annotation', 'value'),
     Input('annotate_metal_image', 'relayoutData'),
     Input('type_dropdown_annotation', 'value'),
@@ -356,14 +356,14 @@ def export_raw_data_on_click_(_, project_name):
 
 @app.callback(
     Output('table_container_co', 'children'),
-    Input('graph_hne_co', 'clickData'),
+    Input('graph_wsi_co', 'clickData'),
     Input('graph_metal_co', 'clickData'),
     State('datatable_coord_co', 'data'),
 )
-def update_two_image_and_table_(clickData_hne, clickData_metal, table_data):
+def update_two_image_and_table_(clickData_wsi, clickData_metal, table_data):
     global config
-    print(clickData_hne, clickData_metal)
-    return update_two_image_and_table(config, clickData_hne, clickData_metal, table_data)
+    print(clickData_wsi, clickData_metal)
+    return update_two_image_and_table(config, clickData_wsi, clickData_metal, table_data)
 
 @app.callback(
     Output('datatable_coord_co', 'data'),
@@ -376,7 +376,7 @@ def update_data_table_(previous_data, current_data):
 
 
 @app.callback(
-    Output('graph_hne_co', 'figure'),
+    Output('graph_wsi_co', 'figure'),
     Output('graph_metal_co', 'figure'),
     Input('datatable_coord_co', 'data'),
     Input('metal_colormap_co', 'value'),
