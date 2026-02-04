@@ -174,7 +174,7 @@ def create_figure(image_rgb):
 
 def get_name(x):
     try:
-        return eval(x).get("name","none")
+        return (eval(x) if isinstance(x, str) else x).get("name","none")
     except:
         return "none"
 
