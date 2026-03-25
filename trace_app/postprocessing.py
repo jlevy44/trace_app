@@ -61,6 +61,7 @@ class Postprocessing:
         import pandas as pd
         from functools import reduce
         VALID_EXTENSIONS = [".xlsx", ".pkl"]
+        print(type(export_pointcloud_df_path))
         assert export_pointcloud_df_path.endswith(VALID_EXTENSIONS), "export_pointcloud_df_path must be a .xlsx or .pkl file"
         excel = export_pointcloud_df_path.endswith(VALID_EXTENSIONS[0])
 
