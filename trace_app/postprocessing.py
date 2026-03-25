@@ -1,4 +1,5 @@
 import fire
+import os
 
 class Postprocessing:
     def __init__(self):
@@ -136,3 +137,9 @@ class Postprocessing:
         # if not export_pointcloud_df_path: export_pointcloud_df_path = os.path.join(os.path.dirname(exported_metals_annots_path), f"pointcloud_df_wsi_coords.{'xlsx' if excel else 'pkl'}")
         if excel: pointcloud_df.to_excel(export_pointcloud_df_path)#os.path.join(os.path.dirname(export_pointcloud_df_path), "pointcloud_df_wsi_coords.xlsx"))
         else: pointcloud_df.to_pickle(export_pointcloud_df_path)
+
+def main():
+    fire.Fire(Postprocessing)
+
+if __name__ == "__main__":
+    main()
