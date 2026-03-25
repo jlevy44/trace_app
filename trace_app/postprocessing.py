@@ -1,6 +1,6 @@
 import fire
 import os
-import pysnooper
+# import pysnooper
 
 class Postprocessing:
     def __init__(self):
@@ -52,7 +52,7 @@ class Postprocessing:
             export_unwarped_metals_annots_path = os.path.join(os.path.dirname(exported_metals_annots_pkl_path), "unwarped_exported_metals_annots.pkl")
         pd.to_pickle(unwarped_exported_metals_annots, export_unwarped_metals_annots_path)
 
-    @pysnooper.snoop()
+    # @pysnooper.snoop()
     def rescale_generate_pointcloud(self, exported_metals_annots_path, wsi_path=None, compression_dict_json_path=None, wsi_basename=None, upscale_factor=1.0, export_pointcloud_df_path="pointcloud_df_wsi_coords.pkl"):
         import pyvips
         import openslide
@@ -60,9 +60,9 @@ class Postprocessing:
         import numpy as np
         import pandas as pd
         from functools import reduce
-        VALID_EXTENSIONS = [".xlsx", ".pkl"]
+        VALID_EXTENSIONS = [".xlsx" , ".csv", ".pkl"]
         assert any(export_pointcloud_df_path.endswith(ext) for ext in VALID_EXTENSIONS), "export_pointcloud_df_path must be a .xlsx or .pkl file"
-        excel = export_pointcloud_df_path.endswith(VALID_EXTENSIONS[0])
+        excel = export_pointcloud_df_path.endswith(VALID_EXTENSIONS[0]) 
 
         transform_to_wsi_coords = (compression_dict_json_path and wsi_basename) or wsi_path
 
@@ -137,7 +137,10 @@ class Postprocessing:
             pointcloud_df.loc[pointcloud_df[annotations_list].sum(axis=1) == 0, 'label'] = ''
 
         # if not export_pointcloud_df_path: export_pointcloud_df_path = os.path.join(os.path.dirname(exported_metals_annots_path), f"pointcloud_df_wsi_coords.{'xlsx' if excel else 'pkl'}")
-        if excel: pointcloud_df.to_excel(export_pointcloud_df_path)#os.path.join(os.path.dirname(export_pointcloud_df_path), "pointcloud_df_wsi_coords.xlsx"))
+        if excel: 
+            pointcloud_df.to_excel(export_pointcloud_df_path)
+        elif export_pointcloud_df_path.endswith(VALID_EXTENSIONS[1]):
+            pointcloud_df.to_csv(export_pointcloud_df_path)
         else: pointcloud_df.to_pickle(export_pointcloud_df_path)
 
 def main():
