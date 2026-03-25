@@ -1,5 +1,6 @@
 import fire
 import os
+import pysnooper
 
 class Postprocessing:
     def __init__(self):
@@ -51,6 +52,7 @@ class Postprocessing:
             export_unwarped_metals_annots_path = os.path.join(os.path.dirname(exported_metals_annots_pkl_path), "unwarped_exported_metals_annots.pkl")
         pd.to_pickle(unwarped_exported_metals_annots, export_unwarped_metals_annots_path)
 
+    @pysnooper.snoop()
     def rescale_generate_pointcloud(self, exported_metals_annots_path, wsi_path=None, compression_dict_json_path=None, wsi_basename=None, upscale_factor=1.0, export_pointcloud_df_path="pointcloud_df_wsi_coords.pkl"):
         import pyvips
         import openslide
