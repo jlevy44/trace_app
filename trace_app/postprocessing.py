@@ -146,11 +146,13 @@ class Postprocessing:
     def rescale_ei_to_wsi_dimensions(
         self,
         exported_metals_annots_path,
+        metals_dict=None,
         wsi_path=None,
         compression_dict_json_path=None,
         wsi_basename=None,
         upscale_factor=1.0,
     ):
+        raise NotImplementedError
         import os
         import json
         import cv2
@@ -161,8 +163,11 @@ class Postprocessing:
         import pandas as pd
         from functools import reduce
 
-        exported_metals_annots_ = pd.read_pickle(exported_metals_annots_path)
-
+        if metals_dict is None:
+            exported_metals_annots_ = pd.read_pickle(exported_metals_annots_path) 
+        else:
+            exported_metals_annots_ = metals_dict
+            
         metals = exported_metals_annots_["metals"]
         is_unwarped = exported_metals_annots_.get("unwarped", False)
 
@@ -318,6 +323,7 @@ def rescale_wsi_to_ei_dimensions(
         wsi_basename=None,
         upscale_factor=1.0,
     ):
+    raise NotImplementedError
     import cv2
     import numpy as np
     import pandas as pd
