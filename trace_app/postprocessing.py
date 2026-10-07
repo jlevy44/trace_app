@@ -143,6 +143,292 @@ class Postprocessing:
             pointcloud_df.to_csv(export_pointcloud_df_path)
         else: pointcloud_df.to_pickle(export_pointcloud_df_path)
 
+    def rescale_ei_to_wsi_dimensions(
+    self,
+    exported_metals_annots_path,
+    wsi_path=None,
+    compression_dict_json_path=None,
+    wsi_basename=None,
+    upscale_factor=1.0,
+):
+    import os
+    import json
+    import cv2
+    import pyvips
+    import openslide
+    import tifffile as tiff
+    import numpy as np
+    import pandas as pd
+    from functools import reduce
+
+    exported_metals_annots_ = pd.read_pickle(exported_metals_annots_path)
+
+    metals = exported_metals_annots_["metals"]
+    is_unwarped = exported_metals_annots_.get("unwarped", False)
+
+    # ---------------------------------------------------------
+    # Determine registered / warped EI coordinate-space shape
+    # ---------------------------------------------------------
+
+    if is_unwarped:
+        warped_shape = exported_metals_annots_.get(
+            "original_warped_shape",
+            None,
+        )
+        if warped_shape is None:
+            raise ValueError(
+                "original_warped_shape required when unwarped=True"
+            )
+    else:
+        warped_shape = metals["All"].shape
+
+    warped_h, warped_w = warped_shape
+
+    # ---------------------------------------------------------
+    # Homography: original EI -> registered EI coordinates
+    # ---------------------------------------------------------
+
+    H = None
+
+    if is_unwarped:
+        H = exported_metals_annots_.get(
+            "previous_homo",
+            [exported_metals_annots_["homo"]],
+        )
+
+        if len(H) == 1:
+            H = H[0]
+        else:
+            H = reduce(np.matmul, H[::-1])
+
+        H = np.asarray(H, dtype=np.float64)
+        H /= H[2, 2]
+
+    # ---------------------------------------------------------
+    # Determine WSI dimensions
+    # ---------------------------------------------------------
+
+    if compression_dict_json_path and wsi_basename:
+
+        with open(compression_dict_json_path, "r") as json_file:
+            compression_dict = json.load(json_file)
+
+        w = compression_dict[f"{wsi_basename}_im_width"]
+        h = compression_dict[f"{wsi_basename}_im_height"]
+
+    elif wsi_path:
+
+        ext = os.path.splitext(wsi_path)[1].lower()
+
+        pyvips_exts = {
+            ".svs",
+            ".tif",
+            ".tiff",
+            ".ome.tif",
+            ".ome.tiff",
+        }
+
+        if ext in pyvips_exts:
+            try:
+                im = pyvips.Image.new_from_file(wsi_path)
+                w, h = im.width, im.height
+            except Exception:
+                im = openslide.OpenSlide(wsi_path)
+                w, h = im.get_level_dimensions(0)
+
+        else:
+            try:
+                im = openslide.OpenSlide(wsi_path)
+                w, h = im.get_level_dimensions(0)
+
+            except Exception:
+                im = tiff.imread(wsi_path)
+
+                if im.shape[0] == 3:
+                    w, h = im.shape[2], im.shape[1]
+                else:
+                    w, h = im.shape[1], im.shape[0]
+
+    else:
+        h = round(warped_h * upscale_factor)
+        w = round(warped_w * upscale_factor)
+
+    # ---------------------------------------------------------
+    # Process one float32 EI channel
+    # ---------------------------------------------------------
+
+    def process_channel(channel):
+
+        if channel.dtype != np.float32:
+            raise TypeError("EI channels must be float32")
+
+        valid_mask = ~np.isnan(channel)
+
+        channel_filled = channel.copy()
+        channel_filled[~valid_mask] = 0.0
+
+        # Original EI -> registered EI coordinates
+        if is_unwarped:
+            channel_filled = cv2.warpPerspective(
+                channel_filled,
+                H,
+                dsize=(warped_w, warped_h),
+                flags=cv2.INTER_LINEAR,
+                borderMode=cv2.BORDER_CONSTANT,
+                borderValue=0.0,
+            )
+
+            valid_mask = cv2.warpPerspective(
+                valid_mask.astype(np.uint8),
+                H,
+                dsize=(warped_w, warped_h),
+                flags=cv2.INTER_NEAREST,
+                borderMode=cv2.BORDER_CONSTANT,
+                borderValue=0,
+            ).astype(bool)
+
+        # Registered EI coordinates -> WSI dimensions
+        channel_wsi = cv2.resize(
+            channel_filled,
+            (w, h),
+            interpolation=cv2.INTER_LINEAR,
+        ).astype(np.float32, copy=False)
+
+        valid_mask_wsi = cv2.resize(
+            valid_mask.astype(np.uint8),
+            (w, h),
+            interpolation=cv2.INTER_NEAREST,
+        ).astype(bool)
+
+        channel_wsi[~valid_mask_wsi] = np.nan
+
+        return channel_wsi
+
+    return {
+        element: process_channel(channel)
+        for element, channel in metals.items()
+    }
+
+def rescale_wsi_to_ei_dimensions(
+    self,
+    wsi_data,
+    exported_metals_annots_path,
+    wsi_path=None,
+    compression_dict_json_path=None,
+    wsi_basename=None,
+    upscale_factor=1.0,
+):
+    import cv2
+    import numpy as np
+    import pandas as pd
+    from functools import reduce
+
+    exported_metals_annots_ = pd.read_pickle(exported_metals_annots_path)
+
+    metals = exported_metals_annots_["metals"]
+    is_unwarped = exported_metals_annots_.get("unwarped", False)
+
+    original_ei_shape = metals["All"].shape
+    original_h, original_w = original_ei_shape
+
+    if is_unwarped:
+        warped_shape = exported_metals_annots_.get(
+            "original_warped_shape",
+            None,
+        )
+        if warped_shape is None:
+            raise ValueError(
+                "original_warped_shape required when unwarped=True"
+            )
+    else:
+        warped_shape = original_ei_shape
+
+    warped_h, warped_w = warped_shape
+
+    # ---------------------------------------------------------
+    # Inverse homography:
+    # registered EI coordinates -> original EI coordinates
+    # ---------------------------------------------------------
+
+    H_inv = None
+
+    if is_unwarped:
+        H = exported_metals_annots_.get(
+            "previous_homo",
+            [exported_metals_annots_["homo"]],
+        )
+
+        if len(H) == 1:
+            H = H[0]
+        else:
+            H = reduce(np.matmul, H[::-1])
+
+        H = np.asarray(H, dtype=np.float64)
+        H /= H[2, 2]
+
+        H_inv = np.linalg.inv(H)
+        H_inv /= H_inv[2, 2]
+
+    # ---------------------------------------------------------
+    # Process one WSI-space float32 channel
+    # ---------------------------------------------------------
+
+    def process_channel(channel):
+
+        if channel.dtype != np.float32:
+            raise TypeError("Input channels must be float32")
+
+        valid_mask = ~np.isnan(channel)
+
+        channel_filled = channel.copy()
+        channel_filled[~valid_mask] = 0.0
+
+        # WSI dimensions -> registered EI dimensions
+        channel_ei = cv2.resize(
+            channel_filled,
+            (warped_w, warped_h),
+            interpolation=cv2.INTER_LINEAR,
+        ).astype(np.float32, copy=False)
+
+        valid_mask_ei = cv2.resize(
+            valid_mask.astype(np.uint8),
+            (warped_w, warped_h),
+            interpolation=cv2.INTER_NEAREST,
+        ).astype(bool)
+
+        # Registered EI -> original/unwarped EI coordinates
+        if is_unwarped:
+
+            channel_ei = cv2.warpPerspective(
+                channel_ei,
+                H_inv,
+                dsize=(original_w, original_h),
+                flags=cv2.INTER_LINEAR,
+                borderMode=cv2.BORDER_CONSTANT,
+                borderValue=0.0,
+            )
+
+            valid_mask_ei = cv2.warpPerspective(
+                valid_mask_ei.astype(np.uint8),
+                H_inv,
+                dsize=(original_w, original_h),
+                flags=cv2.INTER_NEAREST,
+                borderMode=cv2.BORDER_CONSTANT,
+                borderValue=0,
+            ).astype(bool)
+
+        channel_ei[~valid_mask_ei] = np.nan
+
+        return channel_ei.astype(np.float32, copy=False)
+
+    if isinstance(wsi_data, dict):
+        return {
+            name: process_channel(channel)
+            for name, channel in wsi_data.items()
+        }
+
+    return process_channel(wsi_data)
+
 def main():
     fire.Fire(Postprocessing)
 
