@@ -1043,9 +1043,9 @@ def show_coregistered_images(config, n_clicks, table_data, old_selected_rows, me
         homo = warped_metals_dict.pop("homo")
         landmarks = warped_metals_dict.get("landmarks", None)
         if landmarks:
-            points_src = landmarks.pop("points_src")
-            points_dst = landmarks.pop("points_dst")
-            warped_points_src = landmarks.pop("warped_points_src")
+            points_src = landmarks.get("points_src", None)
+            points_dst = landmarks.get("points_dst", None)
+            warped_points_src = landmarks.get("warped_points_src", None)
                 
         # Process metal image
         if "All" in metal_dropdown_co:
