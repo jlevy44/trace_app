@@ -930,7 +930,7 @@ def update_two_image_and_table(config, clickData_wsi, clickData_metal, table_dat
                                             editable=True, row_deletable=True,)
             return xy_coords_table
 
-def show_coregistered_images(config,n_clicks, table_data, old_selected_rows, threshold):
+def show_coregistered_images_OLD(config,n_clicks, table_data, old_selected_rows, threshold):
     if n_clicks > 0:
         slide_x, slide_y, metals_x, metals_y = [], [], [], []
         for one_index in range(len(table_data)):
@@ -1041,7 +1041,12 @@ def show_coregistered_images(config, n_clicks, table_data, old_selected_rows, me
         warped_metals_dict = warp_metals_new(slide_x, slide_y, metals_x, metals_y, dfs_new_df_co, metals_im_gray.shape, config.wsi_shape)
         config.warped_metals = warped_metals_dict.pop('warped_metals')
         homo = warped_metals_dict.pop("homo")
-
+        landmarks = warped_metals_dict.get("landmarks", None)
+        if landmarks:
+            points_src = landmarks.pop("points_src")
+            points_dst = landmarks.pop("points_dst")
+            warped_points_src = landmarks.pop("warped_points_src")
+                
         # Process metal image
         if "All" in metal_dropdown_co:
             padded_metal_image_co = config.warped_metals['All']
@@ -1103,6 +1108,8 @@ def show_coregistered_images(config, n_clicks, table_data, old_selected_rows, me
 
         # Save warped metals
         save_metal_data = {'metals': config.warped_metals, 'homo': homo, 'previous_homo': config.metal_data.get('previous_homo', [])}
+        if landmarks:
+            save_metal_data['landmarks'] = landmarks
         save_metal_data['previous_homo'].append(homo)
 
         with open(os.path.join(config.workdir_data_path,f"{config.selected_project}/coregistered_metals.pkl"), 'wb') as fp:

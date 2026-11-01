@@ -115,9 +115,15 @@ def warp_metals_new(slide_x, slide_y, metals_x, metals_y, dfs_new_df_co, metals_
     # Compute homography matrix
     homo, status = cv2.findHomography(points_src, points_dst)
     output_h, output_w = wsi_shape[0], wsi_shape[1]
+
+    warped_points_src = homo @ np.vstack([points_src, np.ones(len(points_src))])
+    warped_points_src /= warped_points_src[2,:]
+    warped_points_src = warped_points_src[:2,:].T
+
+    landmarks = dict(points_src=points_src, points_dst=points_dst, warped_points_src=warped_points_src)
     
     # Apply the transformation for each element
     for _, (element, element_image) in dfs_new_df_co[['element', 'image']].iterrows():
         warped_metals[element] = warp_with_nan(element_image, homo, output_w, output_h)
     
-    return dict(warped_metals=warped_metals, homo=homo)
+    return dict(warped_metals=warped_metals, homo=homo, landmarks=landmarks)
