@@ -69,7 +69,11 @@ class Postprocessing:
         exported_metals_annots_ = pd.read_pickle(exported_metals_annots_path)
         is_unwarped = exported_metals_annots_.get('unwarped', False)
         if not is_unwarped:
-            assert (os.path.basename(exported_metals_annots_path).contains("exported_metals_annots") or os.path.basename(exported_metals_annots_path).contains("coregistered_metals")) and os.path.basename(exported_metals_annots_path).endswith(".pkl"), "Exported metals annots path must be a exported_metals_annots.pkl or coregistered_metals.pkl file"
+            basename = os.path.basename(exported_metals_annots_path)
+            assert (
+                ("exported_metals_annots" in basename or "coregistered_metals" in basename)
+                and basename.endswith(".pkl")
+            ), "Exported metals annots path must be a exported_metals_annots.pkl or coregistered_metals.pkl file"
         tissue_mask=~np.isnan(exported_metals_annots_['metals']['All'])
         
         elements=list(exported_metals_annots_['metals'].keys())
