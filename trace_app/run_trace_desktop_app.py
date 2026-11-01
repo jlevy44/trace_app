@@ -3,7 +3,8 @@ from tkinter import filedialog, messagebox, simpledialog
 import subprocess
 import os
 import platform
-import time
+import threading
+import webbrowser
 import pysnooper
 
 image_file_extensions = [".tif", ".tiff", ".ome.tif", ".ome.tiff", ".dng", ".zif", ".stk", ".lsm", ".sgi", ".rgb", ".rgba", ".bw", ".img", ".oif", ".oib", ".sis", ".gel", ".svs", ".scn", ".bif", ".qptiff", ".qpi", ".pki", ".ndpi", ".avs"]
@@ -50,7 +51,7 @@ def has_xlsx_and_image(upload_dir, image_extensions):
     return False
 
 def run_application():
-    global port, project_dir
+    global port, project_dir, trace_process
     if port is None:
         messagebox.showerror("Error", "Please set the port first!")
         return
@@ -143,59 +144,69 @@ def run_application():
         return
 
     try:
-        # Run the command and capture the result
-        # For Windows with "Conda" or "Current Shell", need to specify shell=True and use "cmd"
-        # Real-time flush of subprocess output
-        print_result = True
-        if print_result:
-            import threading
+        # shell=True: Windows conda/current-shell commands are cmd strings.
+        # Do not wait on this thread; it is the Tkinter main loop.
+        if trace_process is not None and trace_process.poll() is None:
+            messagebox.showerror("Error", "TRACE is already running.")
+            return
 
-            print("=== TRACE Command Output ===")
-            process = subprocess.Popen(
-                command,
-                shell=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                stdin=subprocess.PIPE,
-                bufsize=1,
-                universal_newlines=True  # so we get strings not bytes
-            )
+        print("=== TRACE Command Output ===")
+        process = subprocess.Popen(
+            command,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            bufsize=1,
+            text=True,
+            env={**os.environ, "PYTHONUNBUFFERED": "1"},
+        )
+        trace_process = process
 
-            url = f"http://127.0.0.1:{port}/"
-            root.clipboard_clear()
-            root.clipboard_append(url)
-            root.update()
-            messagebox.showinfo("Success", f"TRACE running on {url} (copied to clipboard)")
+        url = f"http://127.0.0.1:{port}/"
+        root.clipboard_clear()
+        root.clipboard_append(url)
+        root.update()
 
-            # Open the default browser with the URL
-            import webbrowser
-            time.sleep(3)
-            webbrowser.open(url)
+        detached = env_mode == "Docker"
+        if detached:
+            status_label.config(text=f"Starting TRACE container on {url} (copied to clipboard)")
+        else:
+            run_button.config(state="disabled")
+            status_label.config(text=f"TRACE running on {url} (copied to clipboard)")
 
-            def stream_output(stream, label):
-                print(label)
-                for line in iter(stream.readline, ''):
-                    if line:
-                        print(line, end='', flush=True)
-                stream.close()
+        def stream_output(proc, is_detached, running_url):
+            try:
+                for line in proc.stdout:
+                    print(line, end="", flush=True)
+            finally:
+                code = proc.wait()
+                print("===========================")
 
-            # Use threads to avoid blocking on .readline()
-            stdout_thread = threading.Thread(target=stream_output, args=(process.stdout, "STDOUT:"))
-            stderr_thread = threading.Thread(target=stream_output, args=(process.stderr, "STDERR:"))
+                def on_exit():
+                    global trace_process
+                    if trace_process is proc:
+                        trace_process = None
+                    run_button.config(state="normal")
+                    if is_detached and code == 0:
+                        status_label.config(text=f"TRACE container running on {running_url}")
+                    else:
+                        status_label.config(text=f"TRACE exited ({code})")
 
-            stdout_thread.start()
-            stderr_thread.start()
+                root.after(0, on_exit)
 
-            # Wait for the process to finish, then wait for output threads
-            process.wait()
-            stdout_thread.join()
-            stderr_thread.join()
+        threading.Thread(
+            target=stream_output,
+            args=(process, detached, url),
+            daemon=True,
+        ).start()
 
-            print("===========================")
-        
-        
-        
+        def open_browser(running_url=url, proc=process, is_detached=detached):
+            if is_detached or proc.poll() is None:
+                webbrowser.open(running_url)
+
+        root.after(3000, open_browser)
     except Exception as e:
+        run_button.config(state="normal")
         messagebox.showerror("Error", f"Failed to run application: {e}")
 
 def quit_application():
@@ -210,6 +221,7 @@ def quit_application():
                 container_id = os.popen(command).read().strip()
                 if container_id:
                     os.system(f"docker stop {container_id}")
+                    status_label.config(text="TRACE has been terminated.")
                     messagebox.showinfo("Success", "TRACE has been terminated (Docker).")
                 else:
                     messagebox.showinfo("Error", "No TRACE Docker container found running on the specified port.")
@@ -252,6 +264,7 @@ def quit_application():
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     continue
             if killed_any:
+                status_label.config(text="TRACE has been terminated.")
                 messagebox.showinfo("Success", f"TRACE has been terminated ({env_mode}).")
             else:
                 messagebox.showinfo("Error", f"No TRACE process found to terminate in {env_mode} mode.")
@@ -261,6 +274,7 @@ def quit_application():
 # Initialize global variables
 port = 8888
 project_dir = None
+trace_process = None
 
 # Create the main window
 root = tk.Tk()
@@ -281,6 +295,9 @@ run_button.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
 
 quit_button = tk.Button(root, text="3. Quit TRACE", command=quit_application)
 quit_button.grid(row=0, column=2, padx=10, pady=10, sticky="nsew")
+
+status_label = tk.Label(root, text="TRACE is not running.", anchor="w")
+status_label.grid(row=2, column=0, columnspan=3, padx=10, pady=5, sticky="ew")
 
 # Create and place the options label with low memory and environment mode dropdown
 options_label = tk.Label(root, text="Options:")
