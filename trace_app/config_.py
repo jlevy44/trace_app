@@ -231,8 +231,8 @@ box_df = pd.DataFrame({'type': [], 'metal': [],
 
 all_relayout_data = {'shapes': [], 'dragmode': ''}
 
-type_to_color_dict = {'immune': all_color_list[0], 'tumor': all_color_list[1]}
-color_to_type_dict = {all_color_list[0]: 'immune', all_color_list[1]: 'tumor'}
+type_to_color_dict = {'default': all_color_list[0], 'test': all_color_list[1]}
+color_to_type_dict = {all_color_list[0]: 'default', all_color_list[1]: 'test'}
 
 
 image_no_axis_layout = go.Layout(
