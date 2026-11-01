@@ -116,9 +116,9 @@ def warp_metals_new(slide_x, slide_y, metals_x, metals_y, dfs_new_df_co, metals_
     homo, status = cv2.findHomography(points_src, points_dst)
     output_h, output_w = wsi_shape[0], wsi_shape[1]
 
-    warped_points_src = homo @ np.vstack([points_src, np.ones(len(points_src))])
-    warped_points_src /= warped_points_src[2,:]
-    warped_points_src = warped_points_src[:2,:].T
+    warped_points_src = homo @ np.vstack([points_src.T, np.ones(len(points_src))])
+    warped_points_src /= warped_points_src[2, :]
+    warped_points_src = warped_points_src[:2, :].T
 
     landmarks = dict(points_src=points_src, points_dst=points_dst, warped_points_src=warped_points_src)
     
